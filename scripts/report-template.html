@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{PAGE_TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;700&family=Vazirmatn:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f3f4f1; --surface:#fffffd; --sunk:#eceee9; --ink:#1b222a; --muted:#59626c; --line:#d8dcd4;
+  --accent:#2c4a7c; --accent-soft:#e3e9f3;
+  --old:#6a6f77; --new:#2c4a7c; --mcr:#7b4a76;
+  --ok:#2d7a4d; --ok-soft:#e1f0e6; --part:#b27511; --part-soft:#f7ecd6; --miss:#b0372c; --miss-soft:#f6e1de; --na:#8a9098;
+  --shadow:0 1px 2px rgba(27,34,42,.06);
+  --font-display:"Noto Kufi Arabic","Vazirmatn",Tahoma,sans-serif;
+  --font-body:"Vazirmatn",Tahoma,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#12161b; --surface:#181e25; --sunk:#1e252d; --ink:#e4e8ec; --muted:#9aa4ae; --line:#2b333c;
+    --accent:#8fa9d9; --accent-soft:#1f2b3d; --old:#a3a8af; --new:#8fa9d9; --mcr:#c79ac2;
+    --ok:#6cc392; --ok-soft:#1b2e23; --part:#e0a849; --part-soft:#33291a; --miss:#ec8175; --miss-soft:#3a2220; --na:#8a9098;
+    --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#12161b; --surface:#181e25; --sunk:#1e252d; --ink:#e4e8ec; --muted:#9aa4ae; --line:#2b333c;
+  --accent:#8fa9d9; --accent-soft:#1f2b3d; --old:#a3a8af; --new:#8fa9d9; --mcr:#c79ac2;
+  --ok:#6cc392; --ok-soft:#1b2e23; --part:#e0a849; --part-soft:#33291a; --miss:#ec8175; --miss-soft:#3a2220; --na:#8a9098;
+  --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.85;padding-block:0 64px;padding-inline:16px}
+.wrap{max-width:1120px;margin-inline:auto}
+h1,h2,h3{font-family:var(--font-display);line-height:1.5;text-wrap:balance;margin:0}
+h1{font-size:clamp(24px,4vw,34px);font-weight:700}
+h2{font-size:clamp(19px,2.6vw,23px);font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+code,.mono{font-family:var(--font-mono);font-size:.86em;direction:ltr;unicode-bidi:isolate}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.eyebrow{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:500}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+header.top{padding-block:40px 24px;display:grid;gap:14px;border-bottom:1px solid var(--line)}
+header.top .lede{max-width:70ch;color:var(--muted)}
+.basekeys{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.basekey{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.dot.base{background:var(--old)} .dot.k0{background:var(--new)} .dot.k1{background:var(--mcr)} .dot.k2{background:var(--part)}
+
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px;overflow-x:auto;white-space:nowrap}
+nav.toc a{display:inline-block;margin-inline-end:16px;font-size:13px;color:var(--muted);text-decoration:none;padding-block:4px}
+nav.toc a:hover{color:var(--ink)}
+
+section{padding-block:44px 8px;display:grid;gap:18px}
+section > header{display:grid;gap:6px}
+section > header p{max-width:72ch;color:var(--muted)}
+
+.answers{display:grid;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.answer{display:grid;grid-template-columns:minmax(0,15rem) minmax(0,1fr);gap:8px 24px;padding:18px 20px;border-top:1px solid var(--line)}
+.answer:first-child{border-top:0}
+.answer .q{font-weight:700;font-family:var(--font-display);font-size:14.5px}
+.answer .a{display:grid;gap:8px}
+.verdict{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;border-radius:999px;padding:2px 10px;width:max-content}
+.v-ok{background:var(--ok-soft);color:var(--ok)} .v-part{background:var(--part-soft);color:var(--part)} .v-miss{background:var(--miss-soft);color:var(--miss)}
+@media (max-width:720px){.answer{grid-template-columns:1fr}}
+
+.glance{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:start;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;font-size:13px;color:var(--muted);background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+.glance table{min-width:760px}
+.glance td:first-child{color:var(--muted);font-size:13px;width:13rem}
+.colhead{display:flex;align-items:center;gap:8px;color:var(--ink)}
+
+.bars{display:grid;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.barrow{display:grid;grid-template-columns:minmax(0,12rem) minmax(0,1fr);gap:6px 16px;align-items:center}
+.barrow .lbl{font-size:13.5px}
+.barrow .lbl small{display:block;color:var(--muted);font-size:12px}
+.pair{display:grid;gap:5px}
+.bar{display:flex;height:18px;border-radius:5px;overflow:hidden;background:var(--sunk)}
+.bar span{display:block;height:100%}
+.bar .c{background:var(--ok)} .bar .p{background:var(--part)} .bar .m{background:var(--miss)} .bar .n{background:var(--na)}
+.barline{display:grid;grid-template-columns:3.2rem minmax(0,1fr) 7.5rem;gap:10px;align-items:center;font-size:12px}
+.barline .who{display:flex;align-items:center;gap:5px;color:var(--muted)}
+.barline .cnt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-inline-end:5px;vertical-align:middle}
+@media (max-width:640px){.barrow{grid-template-columns:1fr}.barline{grid-template-columns:3rem minmax(0,1fr)}.barline .cnt{grid-column:2}}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:2px}
+.kpi b{font-family:var(--font-display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi span{font-size:13px;color:var(--muted)}
+
+.explorer{display:grid;gap:12px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.filters label{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+.filters select,.filters input{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:9rem;max-width:100%}
+.filters input{min-width:14rem}
+.count{font-size:13px;color:var(--muted);margin-inline-start:auto}
+.reqlist{display:grid;gap:8px}
+details.req{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details.req summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:5.6rem minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 14px}
+details.req summary::-webkit-details-marker{display:none}
+details.req[open] summary{border-bottom:1px solid var(--line)}
+.rid{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);direction:ltr;text-align:right}
+.rtitle{font-weight:500}
+.rtitle small{color:var(--muted);font-weight:400;margin-inline-start:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.chip .dot{width:7px;height:7px}
+.c-covered{background:var(--ok-soft);color:var(--ok)} .c-partial{background:var(--part-soft);color:var(--part)} .c-missing{background:var(--miss-soft);color:var(--miss)} .c-not-applicable{background:var(--sunk);color:var(--na)}
+.reqbody{padding:12px 14px 16px;display:grid;gap:12px;font-size:14px}
+.reqbody .blk{display:grid;gap:4px}
+.reqbody .blk > b{font-size:12.5px;color:var(--muted);font-weight:700}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cand{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px;background:var(--ground)}
+.cand h4{margin:0;font-size:13px;display:flex;align-items:center;gap:6px;font-family:var(--font-display)}
+.cand .k{font-size:12px;color:var(--muted);font-weight:700}
+@media (max-width:760px){.cols2{grid-template-columns:1fr}details.req summary{grid-template-columns:4.6rem minmax(0,1fr)}.chips{grid-column:1 / -1;justify-content:flex-start}}
+.more{justify-self:center;font:inherit;font-size:14px;background:var(--surface);color:var(--accent);border:1px solid var(--line);border-radius:8px;padding:6px 16px;cursor:pointer}
+
+.steps{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.step{display:grid;grid-template-columns:2.2rem minmax(0,1fr) minmax(0,1.2fr);gap:10px 16px;padding:12px 16px;border-top:1px solid var(--line);align-items:start}
+.step:first-child{border-top:0}
+.step .n{font-family:var(--font-display);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.step .need{font-weight:500}
+.step .status{display:grid;gap:4px;font-size:13.5px;color:var(--muted)}
+@media (max-width:720px){.step{grid-template-columns:2rem minmax(0,1fr)}.step .status{grid-column:2}}
+
+.design{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.design table{min-width:780px}
+.win{font-size:12px;font-weight:700;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.win-new{background:var(--accent-soft);color:var(--new)} .win-old{background:var(--sunk);color:var(--old)} .win-tie,.win-unclear{background:var(--sunk);color:var(--muted)}
+
+.plan{display:grid;gap:10px}
+.ws{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;border-inline-start:4px solid var(--line)}
+.ws > summary{list-style:none;cursor:pointer;display:grid;gap:6px}
+.ws > summary::-webkit-details-marker{display:none}
+.ws > summary .hd h3::after{content:" ▾";color:var(--muted);font-size:12px}
+.ws[open] > summary .hd h3::after{content:" ▴"}
+.ws[open] > summary{padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.ws .ids{margin-top:8px}
+.ws.P0{border-inline-start-color:var(--miss)} .ws.P1{border-inline-start-color:var(--part)} .ws.P2{border-inline-start-color:var(--na)}
+.ws .hd{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ws .hd h3{flex:1 1 20rem}
+.tag{font-size:11.5px;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:0 7px;color:var(--muted);white-space:nowrap}
+.tag.P0{color:var(--miss);border-color:currentColor} .tag.P1{color:var(--part);border-color:currentColor}
+.ws ol{margin:0;padding-inline-start:20px;display:grid;gap:3px;font-size:14px}
+.ws .ids{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);direction:ltr;text-align:right}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){.twocol{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:8px}
+.panel ul,.panel ol{margin:0;padding-inline-start:20px;display:grid;gap:5px;font-size:14px}
+
+.issues{display:grid;gap:8px}
+.issue{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:5px}
+.issue .sec{font-size:12.5px;color:var(--muted)}
+.issue .fix{font-size:14px}
+.sev{font-size:11px;font-weight:700;border-radius:4px;padding:0 6px}
+.sev-high{background:var(--miss-soft);color:var(--miss)} .sev-medium{background:var(--part-soft);color:var(--part)} .sev-low{background:var(--sunk);color:var(--muted)}
+
+.notes{display:grid;gap:10px}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;gap:4px}
+.note b{font-family:var(--font-display);font-size:14px}
+footer{padding-block:40px 0;color:var(--muted);font-size:13px;display:grid;gap:6px;border-top:1px solid var(--line);margin-top:40px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">{{EYEBROW}}</span>
+  <h1>{{H1}}</h1>
+  <p class="lede">{{LEDE}}</p>
+  <div class="basekeys">{{BASEKEYS}}</div>
+</header>
+
+<nav class="toc" aria-label="فهرست">{{TOC}}</nav>
+
+<section id="answers">
+  <header><span class="eyebrow">پاسخ کوتاه</span><h2>{{ANSWERS_TITLE}}</h2></header>
+  <div class="answers">{{ANSWERS}}</div>
+</section>
+
+<section id="glance">
+  <header><span class="eyebrow">Baseها در یک نگاه</span><h2>{{GLANCE_TITLE}}</h2></header>
+  <div class="glance"><table>
+    <thead><tr><th></th>{{GLANCE_HEAD}}</tr></thead>
+    <tbody>{{GLANCE_ROWS}}</tbody>
+  </table></div>
+</section>
+
+<section id="coverage">
+  <header><span class="eyebrow">پوشش نیازمندی‌ها</span><h2>کجا کامل است، کجا ناقص</h2><p>هر نوار یک دامنه است و هر نیازمندی دقیقاً یک حکم نهایی دارد: همان حکمی که بعد از بازبینی بدبین باقی ماند. «کامل» یعنی کل زنجیره هست: داده، فرم، صفحه برای نقش درست، دسترسی و خودکارسازی. «جزئی» یعنی پیاده‌سازی واقعی هست ولی شکاف مهمی دارد.</p></header>
+  <div class="kpis">{{KPIS}}</div>
+  <div class="bars" id="bars"></div>
+  <div class="legend"><span><i style="background:var(--ok)"></i>کامل</span><span><i style="background:var(--part)"></i>جزئی</span><span><i style="background:var(--miss)"></i>ناموجود</span><span><i style="background:var(--na)"></i>نامربوط</span></div>
+</section>
+
+<section id="explorer" class="explorer">
+  <header><span class="eyebrow">همه‌ی نیازمندی‌ها</span><h2>کاوشگر {{N_REQ}} نیازمندی</h2><p>روی هر ردیف بزنید تا معیار پذیرش، شاهد در هر Base و شکاف‌ها را ببینید. نام‌ها دقیقاً همان نام‌های داخل Base هستند.</p></header>
+  <div class="filters">
+    <label for="f-domain">دامنه<select id="f-domain"></select></label>
+    <span id="f-cands" style="display:contents"></span>
+    <label for="f-pri">اولویت<select id="f-pri"><option value="">همه</option><option value="core">هسته</option><option value="secondary">فرعی</option></select></label>
+    <label for="f-q">جست‌وجو<input id="f-q" type="search" placeholder="شناسه، عنوان یا نام شیء"></label>
+    <span class="count" id="f-count"></span>
+  </div>
+  <div class="reqlist" id="reqlist"></div>
+  <button class="more" id="more" type="button" hidden>نمایش بیشتر</button>
+</section>
+{{OPTIONAL_SECTIONS}}
+<footer>{{FOOTER}}</footer>
+</div>
+
+<script id="data" type="application/json">{{DATA}}</script>
+<script>
+(function(){
+  "use strict";
+  var D = JSON.parse(document.getElementById("data").textContent);
+  var fa = function(n){ return String(n).replace(/[0-9]/g, function(d){ return "۰۱۲۳۴۵۶۷۸۹"[+d]; }); };
+  var VL = {covered:"کامل", partial:"جزئی", missing:"ناموجود", "not-applicable":"نامربوط"};
+  var PL = {core:"هسته", secondary:"فرعی"};
+  var esc = function(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); };
+
+  var bars = document.getElementById("bars");
+  D.domains.forEach(function(dm){
+    var row = document.createElement("div"); row.className = "barrow";
+    var html = '<div class="lbl">' + esc(dm.name) + '<small>' + fa(dm.total) + ' نیازمندی · <span class="mono">' + esc(dm.key) + '</span></small></div><div class="pair">';
+    D.cands.forEach(function(cd, i){
+      var c = dm.counts[cd.key], t = dm.total;
+      var seg = function(k, cls){ return c[k] ? '<span class="' + cls + '" style="width:' + (100 * c[k] / t) + '%" title="' + VL[k] + ': ' + fa(c[k]) + '"></span>' : ""; };
+      html += '<div class="barline"><span class="who"><i class="dot k' + i + '"></i>' + esc(cd.short) + '</span><div class="bar" role="img" aria-label="' + esc(cd.label) + ': کامل ' + fa(c.covered||0) + '، جزئی ' + fa(c.partial||0) + '، ناموجود ' + fa(c.missing||0) + '">' +
+        seg("covered","c") + seg("partial","p") + seg("missing","m") + seg("not-applicable","n") + '</div><span class="cnt">' + fa(c.covered||0) + ' / ' + fa(c.partial||0) + ' / ' + fa(c.missing||0) + '</span></div>';
+    });
+    row.innerHTML = html + "</div>";
+    bars.appendChild(row);
+  });
+
+  var fd = document.getElementById("f-domain");
+  fd.innerHTML = '<option value="">همه</option>' + D.domains.map(function(d){ return '<option value="' + esc(d.key) + '">' + esc(d.name) + '</option>'; }).join("");
+  var opts = '<option value="">همه</option><option value="covered">کامل</option><option value="partial">جزئی</option><option value="missing">ناموجود</option>';
+  document.getElementById("f-cands").innerHTML = D.cands.map(function(cd, i){ return '<label for="f-c' + i + '">حکم ' + esc(cd.label) + '<select id="f-c' + i + '">' + opts + '</select></label>'; }).join("");
+  var list = document.getElementById("reqlist"), more = document.getElementById("more"), count = document.getElementById("f-count");
+  var PAGE = 30, shown = PAGE, current = [];
+  var chip = function(r, cd, i){ var v = r.v[cd.key]; return v ? '<span class="chip c-' + v.verdict + '"><i class="dot k' + i + '"></i>' + esc(cd.short) + ': ' + VL[v.verdict] + '</span>' : ""; };
+  var cand = function(r, cd, i){
+    var v = r.v[cd.key]; if (!v) return "";
+    return '<div class="cand"><h4><i class="dot k' + i + '"></i>' + esc(cd.label) + ' <span class="chip c-' + v.verdict + '">' + VL[v.verdict] + '</span>' + (v.op === null ? "" : ' <span class="chip ' + (v.op ? "c-covered" : "c-not-applicable") + '">' + (v.op ? "آماده‌ی کار" : "آماده‌ی کار نیست") + '</span>') + '</h4>' +
+      '<div><span class="k">شاهد</span><div>' + esc(v.evidence) + '</div></div>' +
+      (v.gaps ? '<div><span class="k">شکاف</span><div>' + esc(v.gaps) + '</div></div>' : "") +
+      (v.better ? '<div><span class="k">در مقایسه با قدیمی</span><div>' + esc(v.better) + '</div></div>' : "") + '</div>';
+  };
+  function render(){
+    list.innerHTML = current.slice(0, shown).map(function(r){
+      return '<details class="req"><summary><span class="rid">' + esc(r.id) + '</span><span class="rtitle">' + esc(r.title) + '<small>' + (PL[r.priority]||"") + '</small></span><span class="chips">' + D.cands.map(function(cd, i){ return chip(r, cd, i); }).join("") + '</span></summary>' +
+        '<div class="reqbody"><div class="blk"><b>شرح</b><div>' + esc(r.description) + '</div></div>' +
+        '<div class="blk"><b>معیار پذیرش</b><div>' + esc(r.acceptance) + '</div></div>' +
+        '<div class="blk"><b>در Base قدیمی / منبع</b><div>' + esc(r.evidence_old) + '</div></div>' +
+        '<div class="cols2">' + D.cands.map(function(cd, i){ return cand(r, cd, i); }).join("") + '</div></div></details>';
+    }).join("");
+    count.textContent = fa(current.length) + " مورد";
+    more.hidden = shown >= current.length;
+  }
+  function apply(){
+    var dm = fd.value, pr = document.getElementById("f-pri").value, q = document.getElementById("f-q").value.trim().toLowerCase();
+    var vs = D.cands.map(function(cd, i){ return document.getElementById("f-c" + i).value; });
+    current = D.reqs.filter(function(r){
+      if (dm && r.domain_key !== dm) return false;
+      for (var i = 0; i < vs.length; i++) if (vs[i] && (!r.v[D.cands[i].key] || r.v[D.cands[i].key].verdict !== vs[i])) return false;
+      if (pr && r.priority !== pr) return false;
+      if (q){ var hay = [r.id, r.title, r.description, r.acceptance].concat(D.cands.map(function(cd){ var v = r.v[cd.key] || {}; return (v.evidence || "") + " " + (v.gaps || ""); })).join(" ").toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+      return true;
+    });
+    shown = PAGE; render();
+  }
+  document.querySelectorAll(".filters select").forEach(function(s){ s.addEventListener("change", apply); });
+  document.getElementById("f-q").addEventListener("input", apply);
+  more.addEventListener("click", function(){ shown += PAGE; render(); });
+  apply();
+})();
+</script>
+</body>
+</html>
