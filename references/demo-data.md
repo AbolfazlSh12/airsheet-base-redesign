@@ -1,8 +1,7 @@
 # Demo data: back up the real records, load mock data, restore
 
 Customers want to see the redesigned base full — no empty list, KPI or calendar anywhere — without seeing their real
-(or anyone's) data in the demo. The first project's full plan, with every measurement, is
-`<workspace>/srm-build/round2/DATA-PLAN.md` (+ `view-coverage.json`). This is the reusable core.
+(or anyone's) data in the demo. Write the plan as `<work>/data/DATA-PLAN.md` (+ `view-coverage.json`) before seeding.
 
 ## Decide first
 
@@ -67,17 +66,17 @@ Ask the user. Default to A only when they asked for it explicitly.
 7. **Afterwards.** Record the run (times, counts, checksums) in `<work>/reports/demo-data.md`. Expect: autonumber gaps
    (cosmetic), `index=history` roughly tripled for the base, each real record's history showing a delete and a restore.
 
-Helpers in `scripts/lib.ts` (folded back after the SRM seed of 2026-10-01): `exportRecords(table)` (read-only,
+Helpers in `scripts/lib.ts`: `exportRecords(table)` (read-only,
 count-asserted), `checksum` / `serverChecksum`, `seedRows(table, rows)` (refuses ids that are neither `MOCK-` nor listed in
 `mock-idmap.json`, and links to non-mock rows outside `project.json` `keepLinkTables`; appends to `mock-manifest.json`),
 `tombstoneRaw(table, ids)` (raw tombstones without notify; real ids only with `allowReal`), `restoreRaw(table, raws)`
 (the guards above — **not yet proven end to end**: run the rehearsal and G6 before trusting it with real data).
 
-## First run (2026-09-25): what happened and what to change
+## Lessons from a first run
 
-Step scripts: `<workspace>/srm-build/build/steps/demo-data/` (`p1_backup.ts` app backup + poll, `p1_export.ts`
-raw export + manifest, `g1_verify.ts`, `p1_struct.ts`/`r_struct.ts` structure snapshot, `r_baseline.ts` + `walk.py`
-per-account view counts, `r_gc_state.ts`; they take `SNAP=<export dir>`). Report: `…/srm-build/round2/BACKUP-REPORT.md`.
+Keep the step scripts under `<work>/build/steps/demo-data/` (app backup + poll, raw export + manifest, verify, structure
+snapshot, per-account view counts, GC state), each taking `SNAP=<export dir>`; write the run report to
+`<work>/reports/demo-data.md`.
 
 - Backup + export of 30 tables / 22,463 live rows took ~2.5 min; G1 passed on 30/30 tables, twice (at export, and
   re-read from disk later). `JSON.stringify(JSON.parse(raw)) === raw` held for every row, so a re-post loses only `gid`.
@@ -92,16 +91,16 @@ per-account view counts, `r_gc_state.ts`; they take `SNAP=<export dir>`). Report
 - Scripts written in a session scratchpad vanish on reboot: write step scripts under `<work>/build/steps/` from the
   first line.
 
-## Second run (2026-10-01): the customer emptied the base first
+## Lessons from a second run: the customer had emptied the base
 
 - The user deleted every record (0 events in `index=main`, catalogue and our own site content included), so backup,
   rehearsal and hiding were moot. Reference tables and own content came back from the latest non-deleted version per id
   in `index=history` with `restoreRaw` (ids kept, so mock rows still link to them); then re-date the mock files to the
-  real demo day (`D=…`), validate, seed parents first (`round3/s3_seed.ts`: resolves autonumber link titles, seeds
+  real demo day (`D=…`), validate, seed parents first (resolve autonumber link titles, seeds
   self-linked tables in two layers, waits for notify between files).
 - **Readable seed ids broke every record-context list** (`has any of [id]` compares `_id` only for uuid-shaped ids).
   Seed with deterministic uuids derived from the readable ids and keep the map in `mock-idmap.json`
-  (`round3/s7_reseed.ts`); the lib accepts those uuids as mock.
+  ; the lib accepts those uuids as mock.
 - Filter counts said 0 empty lists; the browser crawl (`scripts/crawl-lists.cjs`) found five. Gate G4 is the crawl.
 - Pages that need "help" or "news" content: seed extra content rows too (FAQ ≥ 8, guides ≥ 4, news ≥ 6 for a carousel).
 

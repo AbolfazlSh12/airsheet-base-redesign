@@ -12,7 +12,7 @@ report.json (paths relative to data_dir unless absolute; every section except th
   "wf1": "wf1.json", "wf2": "wf2.json", "wf3": "wf3.json",   # workflow results (atlas audit / design review / plan)
   "baseline": {"label": "قدیمی (مشتری)", "id": "<id>", "dump": "dump_<id>.json"},
   "candidates": [{"key": "NEW", "label": "نسخه‌ی نو", "short": "نو", "id": "<id>", "dump": "dump_<id>.json"}],
-  "domains": [["VEN", "تأمین‌کننده و سازمان"], ["GAP", "شکاف‌های کشف‌شده توسط منتقد"]],   # display order
+  "domains": [["DOM", "دامنه‌ی نمونه"], ["GAP", "شکاف‌های کشف‌شده توسط منتقد"]],   # display order
   "new_requirement": {"prefix": "NEW", "eyebrow": "…", "title": "…", "intro": "…"},
   "text": {"page_title", "eyebrow", "h1", "lede", "date", "answers_title", "glance_title",
            "answers": [{"q": "…", "verdict": "…", "tone": "ok|part|miss", "text": "… {N} … {covered_NEW} …"}],

@@ -7,7 +7,7 @@ Assessment agents run inside the three workflow scripts (`scripts/workflows/`). 
 
 ```
 Project: Airsheet (no-code platform; repos <cloud-back> (Express/Apollo/Mongoose) and <cloud-front> (Quasar/Vue3)).
-We are redesigning base <baseId> («customer / purpose») by configuration only.
+We are building base <baseId> («customer / purpose») from the approved design <work>/design/DESIGN.md, by configuration only.
 Read <work>/BRIEF.md fully first (rules, ownership, decisions, lessons). Then as needed: <work>/build/LIB.md,
 <work>/build/DESIGN-GUIDE.md, <work>/design/SYSTEM.md.
 Environment: MongoDB/Redis/Splunk on localhost are SSH tunnels to the team's SHARED test server — anything you write is
@@ -97,7 +97,7 @@ Plan the demo-data operation for base <id> per the skill's references/demo-data.
 EVERY view placed on a page or template of every side and every STATS tile, with the account that sees it and the
 minimum rows it needs (view-coverage.json); design ≈<n> mock rows per table that make all of them non-empty for the
 right account, realistic Persian content without test words, dates as offsets from demo day; list galleries needing
-cover images. Write <work>/round2/DATA-PLAN.md.
+cover images. Write <work>/data/DATA-PLAN.md.
 ```
 The seeder then executes the phases with the gates, one gate per message back to the orchestrator; the orchestrator
 asks the user before phase 3 (hiding real data).

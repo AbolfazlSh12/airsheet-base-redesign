@@ -34,7 +34,7 @@ L.run(async () => {
     Object.values(x).forEach((y) => walk(y, where));
   };
   for (const [where, doc] of containers) walk(doc, where);
-  // pickers and after-submit templates of the forms placed on the supplier side
+  // pickers and after-submit templates of the forms placed on the portal side
   for (const id of [...used.keys()]) {
     const v = views[id]; if (v?.type !== "Form") continue;
     const l = (v.layout || [])[0] || {};

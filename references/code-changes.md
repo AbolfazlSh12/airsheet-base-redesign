@@ -1,7 +1,7 @@
 # Platform code changes (only when the user explicitly asks)
 
-The redesign itself is configuration. When a customer need cannot be met by configuration (SRM round 3: file names of
-attachments from an API, a date range for scheduled automations), the user may ask for a code change in
+The base itself is built by configuration. When a customer need cannot be met by configuration (for example file names
+of attachments from an API, a date range for scheduled automations, an API table inside a form), the user may ask for a code change in
 `cloud-back` / `cloud-front`. Each repo's own `CLAUDE.md` rules apply on top of this file; read them first.
 
 ## Branches and worktrees
@@ -36,7 +36,7 @@ attachments from an API, a date range for scheduled automations), the user may a
 ## Seeing a UI change work without touching the shared server
 
 The dev servers on :3000/:9003 run the main checkouts against the shared test DB; a second backend on the shared
-Redis would pick up other bases' automation jobs. Use a throwaway stack instead (SRM round 3, ~10 min to set up):
+Redis would pick up other bases' automation jobs. Use a throwaway stack instead (~10 min to set up):
 
 1. Mongo: the cached binary `~/.cache/mongodb-binaries/mongod-x64-ubuntu-*` (a file, not a dir) with
    `--dbpath <scratch>/db --port 27030 --bind_ip 0.0.0.0`.

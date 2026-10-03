@@ -9,9 +9,9 @@ Copy to `<work>/BRIEF.md`, fill the «…», and tell every agent to read it ful
 Read this whole file before doing anything. It is the contract every build agent works under.
 
 ## What we are doing
-«One paragraph: the base, the customer, the evaluation result (N requirements: x covered, y partial, z missing), and the
-scope of this round, e.g. "close the gaps by changing the base's configuration only — no cloud-back/cloud-front code".
-Then what the next phase is (e.g. page redesign).»
+«One paragraph: the new base and its purpose, the customer, the source (old base id and/or requirement documents),
+the approved design (`design/DESIGN.md`, approved on «date»), and the scope of this round, e.g. "build the approved
+design by configuration only — no cloud-back/cloud-front code". Then what the next phase is (e.g. pages, migration).»
 
 ## Environment — read carefully
 - MongoDB, Redis and Splunk on localhost are «SSH tunnels to the team's shared TEST server». Other people use it. Every
@@ -61,7 +61,7 @@ Status-field `colors` belong to the domain agent of that table.
 - «dated, one line each: what went wrong, how it was caught, what to do instead»
 ```
 
-## Why each rule exists (first project)
+## Why each rule exists (from a previous project)
 
 - DRY first + `changes.log` with the full previous value: every change was reviewable and revertable.
 - Ownership table + `requests/` + `ui-needs/`: six functional agents ran in parallel with zero write conflicts; the

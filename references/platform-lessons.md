@@ -25,7 +25,7 @@ before quoting them to anyone.
   agents use it) as "Modify Shared Resources" and refuses it mid-run; the demo-data run stopped at G2 for that. Get the
   user's approval for every lib addition before launching the agent that needs it, and give it the approved file.
 - More than two parallel headless browsers made pages capture half-loaded and repeated logins hit the captcha.
-- **Know which code the running dev server executes before debugging it.** In round 4 the server on :3000 ran from a
+- **Know which code the running dev server executes before debugging it.** Once the server on :3000 ran from a
   different checkout (`<another-checkout>/cloud-back`, an automation-refactor branch) than the one the scripts used
   (`<workspace>/cloud-back`, develop), and another session was committing in it every few minutes. Check
   `readlink /proc/$(ss -ltnp | grep -o 'pid=[0-9]*' …)/cwd`, its branch and `git reflog`; never edit a checkout another
@@ -44,7 +44,7 @@ before quoting them to anyone.
   on a portal page, or reachable by id is readable by portal users: keep a user-scope filter on each and send only the
   fields the card needs.
 - A view shown to both staff and portal users cannot carry `has my mobile` (staff searches send the view's own filters).
-  Make a copy «… (تأمین‌کننده)» plus a template limited to the portal side; check with `scripts/portal-invariant.ts`.
+  Make a copy «… (پرتال)» plus a template limited to the portal side; check with `scripts/portal-invariant.ts`.
 - Self-registration depends on the **server-wide** `auth.register.enable`, not on `base.preferences.signup`.
 - Status locks you build with conditions are UI-only; the server does not enforce `candelete`, row ownership, or
   "editable only while draft". Say so in the report instead of promising it.
@@ -79,7 +79,7 @@ before quoting them to anyone.
   any scheduled automation to a date range (the job is skipped outside it, like an inactive one). REST API responses
   mapped to an attachments field keep file names when each file is `{fileName, content}` or a data URI with `name=`;
   a bare base64 string is still saved as `file.<ext>` (customers used to zip files to work around it).
-- **Consolidating automations** (SRM 60 → 27, playbook.md «Automation consolidation»): every fetch with one schedule
+- **Consolidating automations** (one base went from 60 to 27; playbook.md «Automation consolidation»): every fetch with one schedule
   goes into one cron automation; send, resend, status inquiry and per-status SMS of one request table go into one
   `update` automation whose actions are made mutually exclusive by state (tracking code empty or not, «resend» = yes or
   not, «sent at» empty or not). Status SMS without duplicates: a text field «notified» plus a watched formula
@@ -99,7 +99,7 @@ before quoting them to anyone.
 - **Link filters «has any of [id]» compare `_id` only when the operand is uuid-shaped**; any other id (`MOCK-x`,
   `DEMO-x`, an ObjectId) is compared with the link's `primaryFieldValue` and matches nothing. Every record-context
   list (`filterType:"in"` + `filterInField`) sends the parent id this way, so **records that are link targets must have
-  uuid ids**. Readable seed ids emptied every related list of the SRM demo (round 3); fixed by re-seeding with
+  uuid ids**. Readable seed ids emptied every related list of a demo; fixed by re-seeding with
   deterministic uuids plus a MOCK-id → uuid map.
 - `filterType`/`filterInField` only work with a record (templates, ExpandRecord, form v2); on a plain page they yield an
   empty list. SECTION conditions on plain pages: only `[role]` works; everything else counts as true.
@@ -168,6 +168,16 @@ before quoting them to anyone.
   dots (what customers mean by "like this news strip"); `featuredHero` shows only the image until `heroFields` is set.
 - Link pickers: `uview` cannot change a view's `type`. To make a picker a gallery, create a Gallery copy (same filters,
   sorts, pageSize) and re-point the field's `linkView` and `linkViewRules[].view`.
+- **A link picker inside a form must be a Gallery view.** With a Grid as `linkView`, the form's picker dialog lets the
+  user tick rows but never passes the selection back to the field (the Grid does not use the picker's injected
+  selection; the Gallery does). Seen in form v2, 2026-10.
+- **On-demand external data in a form** (form v2 block «جدول از API», where the platform has it): the server calls the
+  external API while the user fills the form, shows the rows as a table and, on submit, creates one child record per
+  filled row. URL, headers and keys live server-side (`FormApiSource`, owner-only, masked on read); link values in the
+  request are read from records the user may pick, so the picker field needs `linkViewEnable` + a user-scoped
+  `linkView`. Prefer it over syncing every external row into a table when the customer's data must not be stored or
+  when only the current user's rows may be visible. Store the values the child row must keep (price, remaining
+  quantity) in plain snapshot fields.
 - A `user` side switched to `layoutType:"sidebar"` shows a house icon for every menu item until each
   `header.menuItems[]` gets `icon` (Lucide name) and `iconColor`; its layout also calls the owner-only `sides` query
   (harmless 403 in the console).
@@ -179,7 +189,7 @@ before quoting them to anyone.
   only in the browser, so a script must keep files small itself. Filenames: no spaces, commas or `@#$%()`.
 - Slots differ: page/table cover, side logos, `base.logo`, footer images take the **key**; page `background.value` and
   SECTION `backgroundImage` are used verbatim in `url('…')` and need a full URL (`<S3 host>/cloud-uploads/<key>`), which
-  is bound to one server. A relative `/cloud-uploads/…` works only behind a same-origin proxy (the old SRM base had 71 of
+  is bound to one server. A relative `/cloud-uploads/…` works only behind a same-origin proxy (one old base had 71 of
   them broken on localhost). The local frontend hard-codes the S3 host when served from `localhost`.
 - Portable background values: a site path (`/img/page%20bg/background4.webp`), a `data:image/svg+xml,` URI with no single
   quote and `#` as `%23`, or a CSS colour token. Opaque photos break dark mode; transparent SVG follows the theme.

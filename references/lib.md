@@ -22,8 +22,8 @@ Model `.save()` and raw collection writes are not used anywhere.
 import * as L from "<work>/build/lib";
 
 L.run(async () => {
-  const sup = L.byName(await L.listTables(), "تأمین‌کنندگان");
-  const f = L.byName(await L.listFields(sup._id), "وضعیت احراز هویت");
+  const sup = L.byName(await L.listTables(), "<نام جدول>");
+  const f = L.byName(await L.listFields(sup._id), "<نام فیلد>");
   await L.updateField(f._id, { description: "…" });
 });
 ```
@@ -37,7 +37,7 @@ npx tsx my_step.ts         # apply the change, append to changes.log, then wait 
 - **`L.run(fn)`**: connects Redis (the CLAUDE.md rule), then Mongo. It runs `fn` and waits `SETTLE_MS`, so the debounced `notify` effects (formula, links, joins, autonumber) finish before the process exits. Always wrap your script in it.
 - **Environment variables**:
   - `DRY=1`: print only.
-  - `AIRSHEET_BOOTSTRAP=1`: load without a base id, only to run `createBase` (greenfield.md).
+  - `AIRSHEET_BOOTSTRAP=1`: load without a base id, only to run `createBase` (`build-new-base.md`, B0).
   - `ALLOW_LIVE=1`: override the guards against SMS, email and API calls (see below).
   - `SETTLE_MS`: how long `run` waits before exiting.
 - **Mutator signature**: every mutator takes an explicit id first, which is the target, or the parent for creates. It takes a `patch` second and optionally `{ force: true }` third. It returns the doc read back after saving, in parsed form.
@@ -52,7 +52,7 @@ npx tsx my_step.ts         # apply the change, append to changes.log, then wait 
 
 | Entity | Functions | Resolver path | Side effects, and what the lib does about them |
 |---|---|---|---|
-| Base | `getBase()`, `updateBase(BASE, patch)`, `createBase(name, requirementDescription)` (greenfield) | `ubase` (iowner, `findOneAndUpdate`); `cbase` | `createBase` needs `AIRSHEET_BOOTSTRAP=1` and `ALLOW_LIVE=1` (`cbase` POSTs the owner to `sales.uba.inputUrl` and may add a lead row to `sales.uba.newUsersTable`), refuses when `project.json` already names a base, and writes the new id there. `cbase` checks the owner's plan limit and also creates the owner collaborator, a default collaborator side «تیم» and one page. No hash. A `preferences` object is **shallow-merged** into the current preferences. `ubase` replaces the whole string, so pass only the keys you change. The lib refuses `tokens`, `scripts`, `acl`, `creator`, `roles`, `isTemplate`, `baleToken`, `rate` and `tags`. `getBase` hides `tokens` and `scripts`. |
+| Base | `getBase()`, `updateBase(BASE, patch)`, `createBase(name, requirementDescription)` (new base) | `ubase` (iowner, `findOneAndUpdate`); `cbase` | `createBase` needs `AIRSHEET_BOOTSTRAP=1` and `ALLOW_LIVE=1` (`cbase` POSTs the owner to `sales.uba.inputUrl` and may add a lead row to `sales.uba.newUsersTable`), refuses when `project.json` already names a base, and writes the new id there. `cbase` checks the owner's plan limit and also creates the owner collaborator, a default collaborator side «تیم» and one page. No hash. A `preferences` object is **shallow-merged** into the current preferences. `ubase` replaces the whole string, so pass only the keys you change. The lib refuses `tokens`, `scripts`, `acl`, `creator`, `roles`, `isTemplate`, `baleToken`, `rate` and `tags`. `getBase` hides `tokens` and `scripts`. |
 | Table | `getTable`, `listTables`, `updateTable(id, patch)`, `createTable(name)`, `deleteTable(id)` | `utable` (iowner, `Object.assign`, `save`); `ctable`; `dtable` | `ctable` also creates a Grid view and a text primary field «نام». `deleteTable` refuses a table with records or linked from another table. | The pre-save hook recomputes `integrityHash` from `canview`, `canadd`, `candelete`, `canviewfields` and `caneditfields`. `canviewfields` and `caneditfields` are only the **defaults for fields created later**. `layout` is the default record-expand layout for **collaborator** sides. |
 | Constraint | `upsertConstraint(tableId, obj)` | `createConstraint` / `updateConstraint` (field ids validated, `table.save`) | These resolvers have no iowner check, so the lib's base check is the only guard. A constraint without an `id` is created and the server assigns a uuid. A constraint with an `id` is merged into the existing one. |
 | Field | `getField`, `listFields(table)`, `createField(table, spec)`, `updateField(id, patch)` | `cfield` / `ufield` (iowner, `save`) | See the field notes below the table. |
@@ -66,7 +66,7 @@ npx tsx my_step.ts         # apply the change, append to changes.log, then wait 
 | User role | `getUserRole`, `listUserRoles`, `createUserRole(spec)`, `updateUserRole(id, patch)` | `cuserrole` / `uuserrole` | No hash. The fields are `accreditView`, `accreditField`, `usernameField`, `userProperty` (`mobile`, `national ID` or `email`) and `accreditForm`. |
 | Record role | `getRecordRole`, `listRecordRoles`, `createRecordRole(table, spec)`, `updateRecordRole(id, patch)` | `crecordrole` / `urecordrole` (iowner, `save`) | `canedit` holds **field** ids and `canadd` holds **table** ids. Both are checked to be in this base. |
 | Uploads | `uploadFile(path, mimetype, {sideId?, tableId?, recordId?})` | `uploadBase64` (what the `upload` mutation runs) | Returns the storage key `<baseId>/<uuid>/<file>` that IMAGE, MENU, GALLERYMENU, STATS, covers and logos need. Page `background` and SECTION `backgroundImage` need the full URL `<S3 host>/cloud-uploads/<key>` (server-bound; prefer a transparent SVG data URI). An attachment value (gallery cover) is built from the key: `[{id: randomUUID(), key, url: key, mimetype, filename, size, fileSize: size, preview: true, type: "<ext>", thumbnails: {large: {url: key}}}]` (the thumbnail key equals the file key for `image/*`), with `thumbnails` an object, not a string (platform-lessons.md, Uploads). Logged to `changes.log` as `kind:"upload"`. There is no delete API: uploaded files stay in S3. Keep the keys in `<work>/design/assets/keys.json` and never upload the same file twice. |
-| Records | `listRecords(table, spl?)`, `getRecord(table, id)`, `createRecord(viewId, init)`, `updateRecord(table, id, values)`, `bulkUpsert(table, rows)`, `deleteRecords(table, ids)` | `crecord` / `updateCell` / `urecords` / `drecords` | See the record notes below the table. |
+| Records | `listRecords(table, spl?)`, `getRecord(table, id)`, `createRecord(viewId, init)`, `updateRecord(table, id, values)`, `bulkUpsert(table, rows)`, `importRows(table, rows)`, `deleteRecords(table, ids)` | `crecord` / `updateCell` / `urecords` / `drecords` | See the record notes below the table. |
 
 **Fields.** The pre-save hook recomputes `integrityHash` from `canview` and `canedit`. It also rejects duplicate select options.
 
@@ -79,7 +79,7 @@ After the save, `ufield` does four things:
 
 Two limits apply:
 
-- `updateField` refuses `type` changes, except with `{allowTypeChangeOnEmptyTable: true}` on a table with no records (greenfield).
+- `updateField` refuses `type` changes, except with `{allowTypeChangeOnEmptyTable: true}` on a table with no records (while building a new base).
 - For lookup and rollup fields, `updateField` always sends `rollupField`. Without it, `ufield` saves the change and then throws, which leaves the change applied and never fires `notify`.
 
 A new field inherits `canview` and `canedit` from the table's `canviewfields` and `caneditfields`. Set them explicitly afterwards.
@@ -135,7 +135,9 @@ Because of that, these three are blocked unless `ALLOW_LIVE=1` when the table ha
 - any hook or plugin in the base
 - a collaborator field with notify or taskField
 
-`urecords` (`bulkUpsert`) is **silent**. It checks constraints and limits but skips invariants, automations, hooks and assignee notifications, and it still runs `notify`. Use it for reference data. New rows get a client-generated uuid, so `changes.log` lists the created ids for undo.
+`importRows` (migration) creates rows under the ids they had in the source base, skips ids that already exist (so a re-run imports only what is missing), at most 500 rows of one table per call; like `bulkUpsert` it goes through `urecords`.
+
+`urecords` (`bulkUpsert`, `importRows`) is **silent**. It checks constraints and limits but skips invariants, automations, hooks and assignee notifications, and it still runs `notify`. Use it for reference data. New rows get a client-generated uuid, so `changes.log` lists the created ids for undo.
 
 `deleteRecords` checks every id first, because `drecords` crashes on an unknown id.
 
@@ -156,7 +158,7 @@ from readable names in `mock-idmap.json`); `seedRows`/`tombstoneRaw` accept `MOC
 - **`ALLOW_LIVE=1`** is the only way to activate or extend automations with sms, email or api actions, or to write records to a table that would fire them. Use it only when the base's SMS, email and API settings point at test providers.
 - The Splunk audit log (`LogFactory.writeAPILog`) is **not** written. That log comes from an Apollo plugin, and a short script would never flush its batch anyway. `changes.log` is the audit trail.
 
-## What was verified (on the first project)
+## What was verified (on a previous project)
 
 - A read-only test exercised every getter, confirmed JSON fields are parsed and `getBase` hides tokens, and pushed sample args for 14 mutations through `validate()` (stub resolver, writes nothing).
 - Each guard rejected bad input: an arg outside the schema, a non-string DTO field, a page id from another base, a field type change, a falsy `upage` value, an unknown role, activating an automation with api actions, `conditions` and `fields` together, and `sideId` on an expand template. A no-op patch was skipped.

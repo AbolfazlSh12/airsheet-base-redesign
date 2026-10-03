@@ -48,7 +48,7 @@ const R: Record<string, any> = {
   ...req("modules/automation/resolvers/index").Mutation,
 };
 
-// Greenfield: AIRSHEET_BOOTSTRAP=1 lets the lib load before the base exists, only so createBase() can run.
+// New base: AIRSHEET_BOOTSTRAP=1 lets the lib load before the base exists, only so createBase() can run.
 const BOOTSTRAP = process.env.AIRSHEET_BOOTSTRAP === "1";
 export const BASE = BOOTSTRAP ? (process.env.AIRSHEET_BASE ?? P.base ?? "") : must("AIRSHEET_BASE", "base");
 export const OWNER = must("AIRSHEET_OWNER", "owner");
@@ -206,7 +206,7 @@ export async function updateBase(id: string, patch: any, opts?: Opts) {
   return change("base", id, before, p, () => call("ubase", { base: id, ...p }), () => getBase(), opts);
 }
 
-// Greenfield only (AIRSHEET_BOOTSTRAP=1 ALLOW_LIVE=1). Creates the base as OWNER (cbase also creates the owner collaborator, a default side «تیم» and one
+// New base only (AIRSHEET_BOOTSTRAP=1 ALLOW_LIVE=1). Creates the base as OWNER (cbase also creates the owner collaborator, a default side «تیم» and one
 // page) and writes its id into project.json. Refuses when project.json already names a base.
 export async function createBase(name: string, requirementDescription = "") {
   if (!BOOTSTRAP) throw new Error("createBase needs AIRSHEET_BOOTSTRAP=1");
@@ -244,7 +244,7 @@ export async function createTable(name: string, opts?: Opts) {
   return change("table.create", BASE, {}, { name },
     async () => String((await call("ctable", { base: BASE, name }))._id), (id) => getTable(id), opts);
 }
-// Greenfield rebuilds only: refuses a table that has any record or is linked from another table.
+// While building a new base only: refuses a table that has any record or is linked from another table.
 export async function deleteTable(id: string, opts?: Opts) {
   const before = await own(M.Table, id, "table");
   const n = await countRecords(id);
@@ -283,7 +283,7 @@ export async function createField(tableId: string, spec: any, opts?: Opts) {
 export async function updateField(id: string, patch: any, opts?: Opts & { allowTypeChangeOnEmptyTable?: boolean }) {
   const before = await own(M.Field, id, "field");
   if ("type" in patch && patch.type !== before.type) {
-    if (!opts?.allowTypeChangeOnEmptyTable) throw new Error("field type changes are out of scope (greenfield: pass allowTypeChangeOnEmptyTable)");
+    if (!opts?.allowTypeChangeOnEmptyTable) throw new Error("field type changes are out of scope (new base: pass allowTypeChangeOnEmptyTable)");
     const n = await countRecords(String(before.table));
     if (n) throw new Error(`type change refused: table has ${n} record(s)`);
   }
@@ -541,17 +541,33 @@ export async function bulkUpsert(tableId: string, rows: any[], opts?: Opts) {
   const before = ids.length ? await listRecords(tableId, `id IN (${ids.join(",")})`) : [];
   if (before.length !== new Set(ids).size) throw new Error("bulkUpsert: some update ids do not exist in this table");
   const values = rows.map((r) => (r.id ? r : { ...r, id: randomUUID() }));
-  const all = values.map((r) => r.id);
   return change("records.upsert", tableId, { rows: before }, { rows: values },
-    () => call("urecords", { table: tableId, values: JSON.stringify(values) }), async () => {
-      for (let i = 0; i < 15; i++) {
-        const got = await listRecords(tableId, `id IN (${all.join(",")})`);
-        if (got.length === all.length) return got;
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-      console.warn(`bulkUpsert: not all ${all.length} rows searchable yet; ids: ${all}`);
-      return values;
-    }, opts);
+    () => call("urecords", { table: tableId, values: JSON.stringify(values) }),
+    () => waitSearchable(tableId, values), opts);
+}
+async function waitSearchable(tableId: string, rows: any[]) {
+  const ids = rows.map((r) => r.id);
+  for (let i = 0; i < 15; i++) {
+    const got = await listRecords(tableId, `id IN (${ids.join(",")})`);
+    if (got.length === ids.length) return got;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  console.warn(`not all ${ids.length} rows of table ${tableId} searchable yet`);
+  return rows;
+}
+// Migration into a new base: creates rows under the ids they had in the source base, so links between migrated rows
+// stay valid. Ids that already exist are skipped, so a re-run imports only what is missing.
+export async function importRows(tableId: string, rows: any[], opts?: Opts) {
+  const ids = rows.map((r) => r.id);
+  if (ids.some((id) => !id)) throw new Error("importRows: every row needs its source id");
+  if (new Set(ids).size !== ids.length) throw new Error("importRows: duplicate ids");
+  if (rows.length > 500) throw new Error("importRows: at most 500 rows of one table per call");
+  const existing = new Set((await listRecords(tableId, `id IN (${ids.join(",")})`)).map((r: any) => String(r.id)));
+  const fresh = rows.filter((r) => !existing.has(String(r.id)));
+  if (!fresh.length) { console.log(`= records.import ${tableId}: all ${ids.length} rows already there`); return []; }
+  return change("records.import", tableId, {}, { rows: fresh },
+    () => call("urecords", { table: tableId, values: JSON.stringify(fresh) }),
+    () => waitSearchable(tableId, fresh), opts);
 }
 export async function deleteRecords(tableId: string, ids: string[], opts?: Opts) {
   await assertQuiet(tableId);
@@ -583,7 +599,7 @@ const KEEP_LINK_TABLES = new Set<string>(((P as any).keepLinkTables ?? []).map(S
 const TOMBSTONE = "_deleted_record";
 const md5_28 = (s: string) => parseInt(require("crypto").createHash("md5").update(s, "utf8").digest("hex").slice(0, 7), 16);
 const withoutGid = (raw: string) => raw.replace(/"gid":"[^"]+"/g, "");
-// Mock rows seeded with uuid ids (round 3): a link filter «has any of [id]» only compares _id when the id is
+// Mock rows seeded with uuid ids: a link filter «has any of [id]» only compares _id when the id is
 // uuid-shaped, otherwise it compares primaryFieldValue, so readable MOCK- ids broke every record-context list.
 // The MOCK-id → uuid map is the proof that a uuid row is mock data.
 export const MOCK_IDMAP = `${__dirname}/mock-idmap.json`;
