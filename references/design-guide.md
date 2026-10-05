@@ -14,7 +14,7 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 
 ---
 
-## 0. The 25 rules. Read these even if you read nothing else
+## 0. The 30 rules. Read these even if you read nothing else
 
 1. **Blocks sit 4 px apart.** The block list is a `flex-wrap gap-1` (`NotionViewer.vue`, draggable class `tw-gap-1`), so vertical rhythm has to come from you. Use SECTION `padding`, TitleDivider (it has `my-4`), or inline `margin` inside TEXT HTML.
 2. **Style everything in TEXT HTML inline**:
@@ -55,6 +55,33 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 23. **Page `name` (`content.name`) is printed as a 1.5 rem bold title under the cover.** Leave it `""` when the page starts with a hero. An empty name still leaves a ~24 px strip.
 24. **Don't use `<style>`, `<script>` or `on*=` attributes in TEXT.** HTML is injected with raw `v-html`, with no sanitizer. A `<style>` leaks to the whole app, and `on*` handlers execute.
 25. **Kanban and card titles truncate at 140 px** (`ViewKanbanCard.vue`). Make the first visible field a short one.
+26. **Every page and every template has a background.** Set `background` on each page document and template layout; a bare
+    white page reads as unfinished. Use one look per side: a transparent SVG `data:image/svg+xml,…` (soft shapes in the brand
+    hue, low opacity, so dark mode still works) or a theme token such as `hsl(var(--b2))` (§3). Content cards stay on
+    `base-100`, so they separate from the background.
+27. **Balance density: no large empty areas, no clutter.** The first screen of a page shows its purpose: a short hero
+    (≤ ~200 px), the KPIs and the main action or list. Put related short blocks side by side (COLUMNS2/3: a form next to its
+    help, two short lists next to each other); show figures as STATS tiles, not as a vertical stack of RECORD values; no
+    single-column column of short fields. At most one hero and two or three titled sections per screen.
+28. **Use images where they carry meaning, not as decoration.** A hero illustration, covers on catalogue-like galleries, a
+    photo in a record header, an illustration in an empty state. Inline SVG in TEXT works on every server and in dark mode;
+    uploaded images need keys (rule 13). One image per section at most.
+29. **Choose every view type, gallery type and block by its use case, never by habit or default.** Decide what the user
+    does with the list, then pick:
+
+    | Use case | View / block |
+    |---|---|
+    | Pick from a catalogue with photos (items, rooms, buildings) | Gallery `featured`, cover = the photo |
+    | "Latest N" strip on a home page (last deliveries, new items) | Gallery `cardsHorizontal` with cover |
+    | Records that move through statuses, worked by a team | Kanban on the status field (full width) |
+    | Transactional records a user scans or compares (requests, documents, rows) | Gallery `featured` without image + status colours, or Grid |
+    | Data entry and bulk edit by staff | Grid |
+    | News, announcements, articles | Gallery `news` (only here) |
+    | Navigation, quick actions | MENU `type3` or GALLERYMENU |
+    | Figures | STATS; status progress: PROGRESS; one person's or company's own record: ExpandRecord |
+30. **Galleries get covers.** Set `brandField` on every Gallery whose records have an image or can get one through a lookup
+    (an item photo on a request line, a building photo on a room), and seed an image on every row (§11 #5). If the table has
+    no natural image, choose a non-gallery type (rule 29) rather than leave grey boxes.
 
 ---
 
@@ -1088,6 +1115,9 @@ A TEXT header, then TABS by topic. Each tab holds ExpandItem blocks (a question 
 
 ## 12. Pre-publish checklist (per page or template)
 
+- [ ] `background` set (rule 26); no large empty area on the first screen, nothing crowded (rule 27).
+- [ ] Every view type, gallery type and block chosen for its use case (rule 29); galleries have covers (rule 30).
+- [ ] Every list on the page has mock rows that pass its filter for each demo account (demo-data.md «Seed per placed view»).
 - [ ] `maxw` chosen:
   - forms 4xl / 5xl
   - dashboards and lists 6xl

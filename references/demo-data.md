@@ -104,6 +104,15 @@ snapshot, per-account view counts, GC state), each taking `SNAP=<export dir>`; w
 - Filter counts said 0 empty lists; the browser crawl (`scripts/crawl-lists.cjs`) found five. Gate G4 is the crawl.
 - Pages that need "help" or "news" content: seed extra content rows too (FAQ ≥ 8, guides ≥ 4, news ≥ 6 for a carousel).
 
+## Seed per placed view
+
+Seed from the pages, not from the tables. List every VIEW block and STATS item placed on a published page or template
+(including tabs and sections hidden by role, control/exception queues such as «overdue» or «without budget», and pickers),
+read its filter, and seed rows that pass it for each demo account: the rich account sees every list and tile non-zero.
+Give each persona every role a page checks (supervisor, manager, building flag …) so role-gated tabs are full too. For
+record templates, pick the showcase records the demo opens and seed every child list on them. Then run the crawl
+(`scripts/crawl-lists.cjs`) per account; filter counts alone are not proof.
+
 ## Mock-data principles
 
 - Realistic, fictional content in the customer's language and domain; **no test tokens** («تست», «آزمایشی») because
