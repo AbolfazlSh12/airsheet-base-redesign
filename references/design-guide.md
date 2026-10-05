@@ -62,7 +62,8 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 27. **Balance density: no large empty areas, no clutter.** The first screen of a page shows its purpose: a short hero
     (≤ ~200 px), the KPIs and the main action or list. Put related short blocks side by side (COLUMNS2/3: a form next to its
     help, two short lists next to each other); show figures as STATS tiles, not as a vertical stack of RECORD values; no
-    single-column column of short fields. At most one hero and two or three titled sections per screen.
+    single-column column of short fields. At most one hero and two or three titled sections per screen. A STATS row
+    fits 4 tiles at `6xl`/`7xl`: use 3 or 4 (or 8), never 5, which leaves one orphan tile on a second row.
 28. **Use images where they carry meaning, not as decoration.** A hero illustration, covers on catalogue-like galleries, a
     photo in a record header, an illustration in an empty state. Inline SVG in TEXT works on every server and in dark mode;
     uploaded images need keys (rule 13). One image per section at most.
@@ -79,6 +80,11 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
     | News, announcements, articles | Gallery `news` (only here) |
     | Navigation, quick actions | MENU `type3` or GALLERYMENU |
     | Figures | STATS; status progress: PROGRESS; one person's or company's own record: ExpandRecord |
+
+    `featured` cards print values **without labels**: give them only self-explanatory fields (title, status chip, date,
+    a person's name). A bare figure or code («12», «A», a reservation number) needs a labelled view: Grid or
+    `cardsHorizontal`. A `featured` card with an image beside the text needs `featuredSize:"lg"`; `md` squeezes the
+    text into one-word lines. A Grid with `groups` on a portal shows only collapsed group headers: sort instead.
 30. **Galleries get covers.** Set `brandField` on every Gallery whose records have an image or can get one through a lookup
     (an item photo on a request line, a building photo on a room), and seed an image on every row (§11 #5). If the table has
     no natural image, choose a non-gallery type (rule 29) rather than leave grey boxes.

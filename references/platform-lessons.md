@@ -151,6 +151,11 @@ before quoting them to anyone.
 
 ## Pages and rendering (details in design-guide.md)
 
+- **Opening a page or template in the editor as the owner rewrites its blocks** (`ViewAppContext.vue:157-188`): a VIEW
+  in a record context without `filterType` gets `filterType:"in"` + the first link field to the record's table (often the
+  wrong one), which empties the list; a Form gets `autoLinkField`; TitleDividers, toolbars and side headers get their
+  defaults. Give every list block an explicit `filterType` (`"none"` when unfiltered) and every form in a template its
+  `autoLinkField`, and write the editor's defaults into your scripts so a re-run after someone opened the page is a no-op.
 - Page `content.name` prints a title strip; set `""` when a hero or header exists. First-block `ExpandRecord` disables the
   page's `maxw`, cover and title.
 - Gallery `cards` justifies text with grey labels; use `featured`/`news`. A cover field with an empty row draws a grey box.
