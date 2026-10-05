@@ -39,7 +39,7 @@ options without colours, "like this screenshot", "no table on the public site", 
 2. For each request, check the **live base** (not your memory of it) and classify: already there (cite the object) /
    configuration gap / platform-code gap (cite the code path) / needs a customer decision or data / external system.
    Compare with the catalogue: a "partial" there is often the customer's main pain point.
-3. Report in Persian, read-only, with exact objects and code lines; correct yourself in writing when a later check
+3. Report in Persian as a requirement report (`requirement-report.md`), read-only, with exact objects and code lines; correct yourself in writing when a later check
    disproves an earlier claim. The user chooses what to build; code items go one branch each (`code-changes.md`).
 
 ## Automation consolidation

@@ -13,6 +13,7 @@ modified.
 |---|---|---|
 | **1. From an existing base** | a live base id (+ any documents, descriptions, meeting notes) | `references/flow-from-old-base.md` |
 | **2. From requirements** | Word / PDF / text / spreadsheet / images | `references/flow-from-requirements.md` |
+| Shared: the requirement report, every time a requirement arrives | — | `references/requirement-report.md` |
 | Shared: the design package and the approval gate | — | `references/design-package.md` |
 | Shared: building and verifying the new base | — | `references/build-new-base.md`, `references/verification.md` |
 
@@ -47,6 +48,9 @@ template or view-display decision.
 10. **Platform code only on request.** Needs that configuration cannot meet are listed in the design as `build` items.
     If the user asks for the code: one branch per item, tests with a negative control, CI-identical run
     (`references/code-changes.md`). Know which checkout the dev server runs before debugging it.
+11. **Reports state only what is true.** Every platform claim is backed by code read or a test run in this session;
+    an empty section says «موردی وجود ندارد» instead of an invented item; the length follows the size of the problem
+    (`references/requirement-report.md` «Truthfulness rules»).
 
 ## Setting up a project
 
@@ -97,6 +101,9 @@ overrides the base for one run, which is how flow 1 reads the old base.
 
 Persian for anything the customer or the product team reads.
 
+- **Requirement report** (HTML, or Word on request) each time a requirement or a scope change arrives: questions for
+  the customer, decisions for the user, blockers, verified bugs, targeted improvements, new features, other —
+  `references/requirement-report.md`.
 - **Design package** (`design/DESIGN.md` + an HTML version for the customer) — `references/design-package.md`.
 - **Completion report**: security findings first, requirement coverage (flow 1: old base vs new base), what was built
   with ids, decisions and their defaults, the go-live list.

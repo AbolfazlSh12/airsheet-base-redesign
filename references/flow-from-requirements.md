@@ -4,7 +4,7 @@ Input: what the customer sent — an RFP or spec (Word, PDF), plain text, forms,
 transcripts, meeting notes. Output: an approved design package and a new base built from it.
 
 ```
-R0 setup → R1 inputs to text → R2 requirement catalogue + critic → R3 open decisions
+R0 setup → R1 inputs to text → R2 requirement catalogue + critic → R3 open decisions → R4 requirement report
         → design package + review (design-package.md) → APPROVAL → build (build-new-base.md) → verify → hand over
 ```
 
@@ -54,6 +54,11 @@ Everything the documents leave open — numbering formats, approval chains, dead
 existing data is imported — goes into `data/decisions.md`, numbered, each with a recommended default and the
 requirement ids it affects. The user may answer "use your defaults"; the completion report lists every default so the
 customer can confirm it before go-live.
+
+## R4. Requirement report
+
+Write the report in `requirement-report.md` from the catalogue and the decisions, after checking every platform claim
+against the code. Give it to the user before the design package. A later scope change or a new input gets a new report.
 
 ## Then
 
