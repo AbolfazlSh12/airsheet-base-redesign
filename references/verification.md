@@ -78,6 +78,17 @@ role's saved login, clicks every tab and reports every list whose `searchAPI` an
 the filter count cannot: template/record-context filters and lists inside tabs. Once every filter count was fine while
 five dashboard tabs were empty for both portal users — readable mock ids broke the record-context filter.
 
+## 5b. Static lint and rule proof
+
+- `node build/lint-base.cjs <dump.json>` flags what the platform silently mishandles: reports grouped by link fields,
+  line charts, formulas that read a timeFormat formula plus a link (never computed), signature conditions with
+  «is empty», messages without recipients, create-triggered messages that read lookups, update automations watching
+  nothing, code-like fields without uniqueness. Exit criterion: 0 errors.
+- `npx tsx build/check-constraints.ts` runs the server's own `constraint.check` for every rule: a duplicate must be
+  rejected, a fresh value accepted.
+- For an automation scenario check with `filter.match`, give every constructed record its `table` (and `base`): the
+  evaluator loads field types from `record.table`, and without it no condition ever matches.
+
 ## 6. Change safety
 
 - `DRY=1` diff read by the agent before every real run; `changes.log` holds `{kind,id,diff:{from,to}}` so any line can

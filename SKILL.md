@@ -1,24 +1,32 @@
 ---
 name: airsheet-base-redesign
-description: Designs and builds Airsheet bases by configuration (tables, fields, automations, roles, portals/sides, pages, expand templates, forms) in two flows that both end in a new base after the user approves a design. (1) From an existing base — read an old or unsatisfying base, diagnose it, propose a complete new design (data model, automations, roles and portals, pages and modules) and, once approved, build it in a NEW base, optionally migrating its data. (2) From requirements — take a Word, PDF, text or spreadsheet requirement (RFP, spec, forms, meeting notes), turn it into a requirement catalogue and a design, and, once approved, build it. Use whenever someone asks to rebuild, redesign, re-architect, clean up or "do properly" an Airsheet base, to design a base from an RFP or requirement document, to estimate or review such a design, or to verify a built base as its real users — even if the word "redesign" is not used.
+description: Designs and builds Airsheet bases by configuration (tables, fields, automations, roles, portals/sides, pages, expand templates, forms) in three flows; the first two end in a new base after the user approves a design. (1) From an existing base — read an old or unsatisfying base, diagnose it, propose a complete new design (data model, automations, roles and portals, pages and modules) and, once approved, build it in a NEW base, optionally migrating its data. (2) From requirements — take a Word, PDF, text or spreadsheet requirement (RFP, spec, forms, meeting notes), turn it into a requirement catalogue and a design, and, once approved, build it — after reading the document as the customer's critic (pain map, sentence-by-sentence ledger, every table column, workflow step and organisational level traced). (3) Audit a built base against its requirement document — list every customer need the base does not meet, ranked, with the configuration fix, then plan and implement the fixes and prove them. Use whenever someone asks to rebuild, redesign, re-architect, clean up or "do properly" an Airsheet base, to design or build a base from an RFP or requirement document, to criticise a base against an RFP or say what the customer needs that was not implemented, to estimate or review such a design, or to verify a built base as its real users — even if the word "redesign" is not used.
 ---
 
 # Airsheet base design and build
 
-Two flows, one shape: **understand → design package → user approval → build a new base → verify as the users → hand
-over**. Nothing is written to a base before the design is approved, and the old base, if there is one, is never
-modified.
+One shape: **understand (as the customer's critic) → design package → user approval → build → verify as the users →
+audit against the document → hand over**. Nothing is written to a base before the design is approved, and the old
+base, if there is one, is never modified.
 
 | Flow | Input | Read |
 |---|---|---|
 | **1. From an existing base** | a live base id (+ any documents, descriptions, meeting notes) | `references/flow-from-old-base.md` |
-| **2. From requirements** | Word / PDF / text / spreadsheet / images | `references/flow-from-requirements.md` |
+| **2. From requirements** | Word / PDF / text / spreadsheet / images | `references/flow-from-requirements.md`, starting with `references/rfp-analysis.md` |
+| **3. Audit a built base against its document** | a base id + the RFP or spec it was built from | `references/rfp-analysis.md`, then `references/gap-audit.md` |
 | Shared: the requirement report, every time a requirement arrives | — | `references/requirement-report.md` |
 | Shared: the design package and the approval gate | — | `references/design-package.md` |
 | Shared: building and verifying the new base | — | `references/build-new-base.md`, `references/verification.md` |
 
 Ask which flow applies when it is not obvious. If the user has both (an old base plus a new requirement document), run
-flow 1 and feed the document into its requirement catalogue.
+flow 1 and feed the document into its requirement catalogue. Flow 3 is also the last step of flow 2: no build from a
+document is done before it has been audited against that document.
+
+**Why the critic's reading matters.** On a real RFP project the first build had a catalogue, a reviewed design and a
+verified base, and a hostile re-read of the RFP still found 28 unmet needs, 4 of them critical. Examples: reports and
+dashboards were missing, a message the document asked for "before final submission" twice was absent, a feature asked
+"at every level" existed at one level, and the base only worked once automations were activated. None of these were
+platform limits. They came from reading habits, which `rfp-analysis.md` replaces with a traced ledger.
 
 Always load `references/platform-lessons.md` before designing: it lists the platform behaviours that silently produce
 wrong results (query builder dropping conditions, `is not` dropping empty rows, automations that never fire, portal
@@ -33,6 +41,8 @@ template or view-display decision.
 2. **Read-only until the design is approved.** The approval covers the design package, the scope (configuration only or
    platform code too), brand, test accounts, the default answers to open questions, and any data migration.
 3. **Build in a new base; never modify the old one.** The old base stays the reference and the fallback until cutover.
+   Flow 3 extends the base *this project built* (after a raw structure snapshot); it never touches a customer's
+   production base or a base someone else owns without the user's explicit instruction.
 4. **Write only through `scripts/lib.ts`** (the UI's own resolvers, schema + DTO validation, base scoping, Bull-worker
    guard, `DRY=1`, `changes.log` with previous values). No raw Mongo writes: integrity hashes lock every role out.
 5. **Every write is `DRY=1` first, then applied, then re-run to show it is idempotent.** Deleting anything needs a raw
@@ -48,7 +58,12 @@ template or view-display decision.
 10. **Platform code only on request.** Needs that configuration cannot meet are listed in the design as `build` items.
     If the user asks for the code: one branch per item, tests with a negative control, CI-identical run
     (`references/code-changes.md`). Know which checkout the dev server runs before debugging it.
-11. **Reports state only what is true.** Every platform claim is backed by code read or a test run in this session;
+11. **Read every requirement document as the customer's critic** (`rfp-analysis.md`): pain map, sentence ledger with
+    every table column and enum value, workflow steps (approval and rejection), roles, levels × features, day-one
+    dependencies, divergence register. Nothing is designed from impressions of the document.
+12. **Done means audited against the document, not against the design** (`gap-audit.md`): the design is diffed against
+    the live base and every ledger line is walked; configuration gaps are closed before the completion report.
+13. **Reports state only what is true.** Every platform claim is backed by code read or a test run in this session;
     an empty section says «موردی وجود ندارد» instead of an invented item; the length follows the size of the problem
     (`references/requirement-report.md` «Truthfulness rules»).
 
@@ -68,6 +83,14 @@ export CHROMIUM_PATH=<path to chrome-headless-shell>
 
 Keep a diary in `$W/memory.md` from the first hour: ids, decisions, what happened, open items.
 
+Run the TS scripts from a cloud-back checkout you own. Shared checkouts change branch under you, and once that broke
+every import mid-build:
+
+```bash
+git -C <workspace>/cloud-back worktree add --detach $W/cloud-back-wt <commit>   # the commit the build uses
+ln -s <workspace>/cloud-back/node_modules $W/cloud-back-wt/node_modules && cp <workspace>/cloud-back/.env $W/cloud-back-wt/
+```
+
 ## Scripts
 
 All read `project.json` next to them; run TS ones from the cloud-back checkout with `npx tsx`. `AIRSHEET_BASE=<id>`
@@ -82,6 +105,9 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | `view-count-as.ts` | rows a view returns for given mobiles and for anonymous, as the server evaluates them |
 | `crawl-lists.cjs` | opens pages as a role, clicks every tab, reports every empty list (exit 1) |
 | `portal-invariant.ts` | every view reachable from a portal side is user-scoped or listed for review |
+| `lint-base.cjs` | static lint of a dump for constructs the platform silently mishandles (link-grouped reports, never-computed formulas, signature conditions, empty recipients…); exit 1 on errors |
+| `check-constraints.ts` | proves every table constraint rejects a duplicate and accepts a fresh value (server's own check, read-only) |
+| `shot-record.cjs` | screenshot of a record dialog (expand template) as a role, by clicking a card on a page |
 | `workflows/1-understand.js`, `2-coverage.js`, `3-remediation.js` | Workflow-tool scripts: catalogue, coverage, gap plan |
 | `build-report.py` + `report-template.html` | a self-contained RTL HTML report (design or comparison) from a JSON |
 
@@ -101,6 +127,8 @@ overrides the base for one run, which is how flow 1 reads the old base.
 
 Persian for anything the customer or the product team reads.
 
+- **Critique / gap list** (flow 3, and at the end of flow 2): ranked unmet needs with evidence and the configuration
+  fix, divergences from the document, customer questions, code-only items — `references/gap-audit.md` G4.
 - **Requirement report** (HTML, or Word on request) each time a requirement or a scope change arrives: questions for
   the customer, decisions for the user, blockers, verified bugs, targeted improvements, new features, other —
   `references/requirement-report.md`.

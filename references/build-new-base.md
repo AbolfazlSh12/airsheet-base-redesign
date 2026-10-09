@@ -66,8 +66,11 @@ For a large base, split the work across agents with disjoint ownership under one
 - **Access**: every portal as its real user and as anonymous (`view-count-as.ts`, `portal-invariant.ts`).
 - **Behaviour**: every automation checked statically with the platform's own `filter.match` on scenario records;
   every form submitted once per portal.
-- **Look**: screenshots per role, desktop, `MOBILE=1` and `THEME=dark` (`shot.cjs`); no empty list
-  (`crawl-lists.cjs`).
+- **Look**: screenshots per role, desktop, `MOBILE=1` and `THEME=dark` (`shot.cjs`); record dialogs per template
+  (`shot-record.cjs`); no empty list (`crawl-lists.cjs`).
+- **Static checks**: `dump-base.cjs` + `lint-base.cjs` with 0 errors; `check-constraints.ts` with every rule working.
+- **Against the document**: the gap audit (`gap-audit.md`) is the done-gate. Close what configuration can close
+  before B3.
 
 ## B3. Report and hand over
 

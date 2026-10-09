@@ -45,8 +45,11 @@ diagnosis of the old base (`data/diagnosis.md`).
 11. **Look.** Palette, logo, typography decisions, and which page shells are used (`design-system-template.md`).
 12. **Decisions and defaults.** Every open question with the recommended default, numbered, so the customer can confirm
     or change each one.
-13. **Traceability.** Requirement id → the objects that cover it (table, field, view, form, automation, page). Every
-    requirement that is not `external` must appear. `build` items (need platform code) and `external` items (need a
+13. **Traceability.** Requirement id (and its ledger lines, `rfp-analysis.md`) → the objects that cover it (table, field,
+    view, form, automation, page). Every requirement that is not `external` must appear; every table column and enum
+    value of the document appears through its ledger line. Add the levels × features matrix and the **divergence
+    register** (each departure from the document's text, quoted, with its reason). Mark operational dependencies:
+    requirements that only work once an automation is active. `build` items (need platform code) and `external` items (need a
     third party) are listed separately with what they need.
 14. **Flow 1 only: old → new.** What is kept, merged, split, renamed or dropped (tables, fields, automations, roles,
     sides, pages), with the reason; and the data-migration plan (`flow-from-old-base.md`, step 6).
@@ -58,8 +61,11 @@ Keep ids out of the package (they do not exist yet). Use names, and in flow 1 ci
 
 Run two agents in parallel, both read-only:
 
-- **Skeptic**: hunts requirements with no object behind them, portal views without a user filter, links in the wrong
-  direction, missing statuses and transitions, automations that can fire twice, KPIs that count other users' rows.
+- **Skeptic**: reads the document itself, not only the catalogue, and hunts requirements with no object behind them,
+  table columns with no field, levels built for one level only, reject paths without a reason, approvals without a
+  stamped approver, gates the document puts "before final submission", portal views without a user filter, links in
+  the wrong direction, missing statuses and transitions, automations that can fire twice, KPIs that count other users'
+  rows.
 - **Platform checker**: reads `platform-lessons.md` and `design-guide.md` and hunts constructs the platform silently
   mishandles (filters the query builder drops, `is not` on optional fields, Grid pickers in forms, readable ids on link
   targets, dialogs with lists on user sides).
@@ -84,3 +90,7 @@ Fix what they find, note what you rejected and why.
 
 Record the approval with its date in `memory.md`. Later changes to the approved design go back through the package
 (a dated change section), not straight into the base.
+
+Every object the package names (page, block, view, constraint, automation, menu filter) becomes a checklist line for
+the build. `gap-audit.md` G1 diffs the package against the live base; promised-but-not-built objects were the largest
+group of misses on a real project.

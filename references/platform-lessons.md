@@ -34,6 +34,13 @@ before quoting them to anyone.
   summary that printed `options.url` leaked two keys into a session transcript. Print URLs with the query stripped
   (`url.replace(/\?.*/, "?…")`), never whole `options`, and keep full action backups in `snapshots-private/`.
 
+- **Own the checkout your build runs from.** Mid-build, another session switched the shared cloud-back checkout to a
+  branch where `modules/automation/models/*` had moved; every `lib.ts` import failed. Run build steps from a git worktree
+  you own (detached at the build's commit, `node_modules` symlinked, `.env` copied).
+- **Waiting on a background step:** `pgrep -f "<script name>"` also matches the wait loop's own command line (it never
+  ends), and `pkill -f` with that string kills the shell running it. Wait on the PID.
+- In zsh, `$VAR` holding several ids is passed as one argument; use `${=VAR}` when feeding page lists to scripts.
+
 ## Access model (what AI atlases got wrong)
 
 - Empty `canview` on a table means **owner only**, not "everyone".
@@ -46,6 +53,17 @@ before quoting them to anyone.
 - A view shown to both staff and portal users cannot carry `has my mobile` (staff searches send the view's own filters).
   Make a copy «… (پرتال)» plus a template limited to the portal side; check with `scripts/portal-invariant.ts`.
 - Self-registration depends on the **server-wide** `auth.register.enable`, not on `base.preferences.signup`.
+- **Field `canedit` is not applied on create** (`record.ts` create: «TODO: check access»), so form defaults for fields
+  a role may not edit still land. **On update** only `canedit` fields survive, plus the clicked button: a button's
+  `doneProcess` / `signs` writes happen in the invariants after the permission filter. So a status field can be
+  locked to an oversight role while buttons still move it.
+- **Split portal record roles per actor.** One record role on «requester, supervisor, manager» mobiles gives the
+  requester edit rights on the approval buttons of their own request (only the UI hid them). Use one role per actor on
+  a plain-string formula field (`@{lookup mobile} . ""`); when routing never makes the requester the approver, the
+  "last match wins" rule never conflicts. Re-test child-row edits through the parent token afterwards.
+- Menu items carry their own `userFilter` with `[role]`: the panel menu may be role-filtered even when `side.roles` is
+  empty. Check before reporting "menus are not role-based". TABS take the same filter in `userFilterTab`, which works on
+  plain pages.
 - Status locks you build with conditions are UI-only; the server does not enforce `candelete`, row ownership, or
   "editable only while draft". Say so in the report instead of promising it.
 - Platform holes seen (fix in code, not config; list them in the product-feedback file): views requested with
@@ -86,6 +104,16 @@ before quoting them to anyone.
   `if(key!=notified, key, "")`; SMS actions are conditioned on the formula's value and a last `updateRecord` sets
   notified := `{record:<formula>}`. Backfill «notified» on existing rows before activation, or every old request gets
   an SMS for its current status.
+- **A `create` trigger sees no lookups or formulas yet**: a message whose recipient is a lookup goes nowhere. Use
+  `match` on «status is X and recipient is not empty».
+- **Recipients from a settings table.** Customer-supplied recipient lists (experts, internal affairs, …) live in a
+  one-row «تنظیمات» table that relevant tables link to; actions use `@{lookup}`. An empty `to` fails «no recipient» once
+  active.
+- **In-app notification reaches only some users depending on the branch:** `automation-hardening` resolves recipients
+  through `baseMemberByMobile` (base collaborators only, `pushNotification.ts:112-122`), develop through
+  `User.findOne({mobile})`. Portal users are not collaborators: test portal notifications on the branch that will ship,
+  or use SMS.
+- Automation scenario checks with `filter.match` need `table` on the constructed record (field types load from it).
 - The nightly 02:00 Tehran cron (22:30 UTC) recomputes `now()` formulas and writes "system" events: not a user change,
   and don't run bulk deletes/restores within 30 minutes of it.
 
@@ -112,6 +140,40 @@ before quoting them to anyone.
   user-scope condition or the tile shows global counts.
 - Staff-queue filters that hide test names (e.g. contains «تست», «آزمایشی») also hide demo data with those words: name
   demo companies realistically.
+
+## Reports, validation, signatures and formulas (verified 2026-10)
+
+- **Pivot2 and Dashboard cannot group by a link field** (records, or lookup of records). `stats.ts` runs
+  `stats … by <field id>`; link values are arrays (`<id>{}.primaryFieldValue`), so every row lands in one «-» group and
+  charts stay empty. Group by a text formula copy (`@{اداره ثبت} . ""`), which flattens to the names. Text, formula
+  and lookup-of-text fields group fine. `lint-base.cjs` flags it.
+- **The `line` chart type rendered nothing** where `bar` with the same data worked (develop 2026-10). No other base on
+  the server used `line`.
+- Shapes, read from existing views (re-check on your server): Pivot2 `layout:[{type:"new", reportTitle,
+  rowFields:[{field}], colFields, measures:[{field, function: sum|count|avg|min|max|median, format, title}],
+  rowSubtotal:{level,label}, …}]`; Dashboard `layout:[{type, by, stats: "count"|"summary", field, aggregate:
+  "Sum"|"Average"|…, title, x, y, w, h, i, …}]`; Calendar `[{calendarType:"monthly", timeField}]`; Gantt
+  `[{startTimeField, endTimeField, titleField, colorField, zoom, …}]`; PROGRESS block `details:{stateField,
+  direction:"horizontal", states:[{label, name, content:{blocks:[]}}]}` (shows every option of the select, in order).
+- **Constraints compare against other rows only** (`constraint.ts` check: filters with field operands are filled from
+  the written record and searched among the others; any hit rejects). They express uniqueness and conflicts, never a
+  rule on the row itself. Use `operandType:"field"` and `table:true` so an empty value skips the rule. A rule like
+  «only if this row is occupying» cannot be expressed; use the picker plus a control view.
+- **Per-row value rules are field `limits`**: strings `{"key":"min"|"max"|"onlyPositive"|"pattern"|"minLength"|…,
+  "value", "error"}`; `pattern` takes a name (`email`, `numeric`, `nationalCode`, …).
+- **Who approved and when**: a `signature` field plus a `signs` action on the button (`{type:"signs", fields:[id]}`
+  before the `doneProcess`) stamps `{status:"signed", signedby, signedtime}`; seed it the same way. Conditions on a
+  signature need **«is signed» / «is not signed»**, because «is (not) empty» never matches. An empty signature in a
+  read-only RECORD still shows a «درج امضا» button, so show each signature inside a section «is signed».
+- **The JS formula fallback cannot read link fields.** A formula that reads a formula containing `timeFormat` goes to
+  the fallback; if it also reads a link field it fails («unsupported token '») and is never computed, with only a log
+  line. A budget key «اداره . سال مالی» was empty from day one, so its linking automation could never work. Compute
+  dates in SPL instead: Jalali year `tonumber(substr(d,1,4)) - if(substr(d,6,5)>="03-21",621,622)` (Nowruz assumed
+  21 March); day number `floor(strptime(substr(replace(d,"/","-"),1,10),"%Y-%m-%d")/86400)`; today
+  `floor((now()+12600)/86400)`.
+- Rollup aggregations available: SUM, MAX, MIN, AVERAGE, COUNT, LATEST, CONCATENATE, ARRAYJOIN, ARRAYUNIQUE.
+- New lookups and formulas on a table with rows take 20-90 s each to create (recompute); a formula over link lookups
+  is the slowest. Budget the time, and run long steps with `nohup` and a PID wait.
 
 ## Records, writes, backup and garbage collection
 
@@ -141,6 +203,11 @@ before quoting them to anyone.
 - `integrityHash` (tables, fields, roles…) is computed over access fields only; a raw write that breaks it makes the next
   read set `isBlocked=true` on every listed role — base-wide lockout. Never write those collections raw.
 
+- **Mock row keys must be stable.** A demo script that numbers rows with a global counter re-keys every later row when
+  you insert new rows before them; `importRows` then creates duplicates under the new uuids (50 doubled document
+  rows doubled the stock once). Give new rows their own key prefix and check the row count against the id map after
+  each seed.
+
 ## Logs and forensics
 
 - `index=behavior`: who called which API on which object, but **no before/after values**. `index=history`: previous record
@@ -156,6 +223,8 @@ before quoting them to anyone.
   wrong one), which empties the list; a Form gets `autoLinkField`; TitleDividers, toolbars and side headers get their
   defaults. Give every list block an explicit `filterType` (`"none"` when unfiltered) and every form in a template its
   `autoLinkField`, and write the editor's defaults into your scripts so a re-run after someone opened the page is a no-op.
+- **Opening a record dialog as the owner** also rewrote that expand template (page settings `maxw`, `align`,
+  `background` dropped). After screenshots taken as the owner, re-run the pages step; `DRY=1` shows the drift.
 - Page `content.name` prints a title strip; set `""` when a hero or header exists. First-block `ExpandRecord` disables the
   page's `maxw`, cover and title.
 - Gallery `cards` justifies text with grey labels; use `featured`/`news`. A cover field with an empty row draws a grey box.

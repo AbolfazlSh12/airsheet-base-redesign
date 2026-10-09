@@ -63,6 +63,20 @@ const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp
     return o;
   };
 
+  // who a menu item / tab is for: the operand of a «[role] has any of» filter
+  const roleWho = (f) => { const x = (parse(f, f) || []).find((n) => n?.filter?.field === '[role]'); return x ? nms(x.filter.operand || []) : undefined; };
+  // forms: every input (an audit needs required/hidden/conditional per field, not a truncated JSON string)
+  const formOut = (layout) => { const L = parse(layout, []); if (!Array.isArray(L)) return undefined;
+    return L.map((pg) => ({ button: pg.button?.text, inputs: (pg.inputs || []).map((i) => [nm(i.id) || i.name, i.required ? 'REQ' : '', i.invisible ? 'HIDDEN' : '', (i.conditions || []).length ? 'COND' : ''].filter(Boolean).join(' ')),
+      defaults: Object.keys(pg.defaultValues || {}).map(nm) })); };
+  // report views: what they group and measure (Pivot2 / Pivot / Dashboard / Calendar / Gantt / Kanban)
+  const reportOut = (v) => { const L = parse(v.layout, []); if (!Array.isArray(L) || !L.length) return undefined;
+    if (v.type === 'Pivot2') return L.map((x) => ({ title: x.reportTitle, rows: (x.rowFields || []).map((r) => nm(r.field)), cols: (x.colFields || []).map((r) => nm(r.field)), measures: (x.measures || []).map((m) => `${m.function}(${nm(m.field)})`) }));
+    if (v.type === 'Dashboard') return L.map((x) => `${x.type} by ${nm(x.by)} ${x.stats === 'count' ? 'count' : `${x.aggregate}(${nm(x.field)})`} «${x.title || ''}»`);
+    if (v.type === 'Pivot') return L.map((x) => ({ groups: (x.groups || []).map(nm), bys: (x.bys || []).map(nm), measure: x.field ? `${x.aggregate}(${nm(x.field)})` : undefined }));
+    if (v.type === 'Calendar' || v.type === 'Gantt') return L.map((x) => ({ start: nm(x.startTimeField || x.timeField), end: nm(x.endTimeField), title: nm(x.titleField) }));
+    return undefined; };
+
   const blocks = (node, acc = []) => {
     if (!node) return acc;
     if (Array.isArray(node)) { node.forEach((n) => blocks(n, acc)); return acc; }
@@ -78,6 +92,9 @@ const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp
       if (node.filter?.length) b.filter = filt(node.filter);
       for (const k of ['buttonText', 'title', 'label']) if (typeof d[k] === 'string' && d[k]) b[k] = d[k].slice(0, 80);
       if (d.items && Array.isArray(d.items)) b.items = d.items.map((i) => (i.title || i.name || i.label || '')).filter(Boolean).slice(0, 20);
+      if (node.type === 'TABS' && Array.isArray(d)) b.tabs = d.map((t) => (roleWho(t.userFilterTab) ? `${t.label} [${roleWho(t.userFilterTab).join('/')}]` : t.label));
+      if (node.type === 'STATS' && Array.isArray(v)) b.items = v.map((i) => i.label).filter(Boolean);
+      if (node.type === 'PROGRESS' && d.stateField) b.stateField = nm(d.stateField);
       acc.push(b);
     }
     for (const [k, v] of Object.entries(node)) if (k !== 'details' || (node.details && typeof node.details === 'object')) { if (typeof v === 'object') blocks(v, acc); }
@@ -104,13 +121,15 @@ const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp
         visibleFields: nms(parse(v.visibleFields, v.visibleFields) || []).slice?.(0, 60),
         filters: filt(v.filters), sorts: filt(v.sorts), groups: filt(v.groups),
         public: v.public || undefined, publicShare: v.publicShare || undefined, shared: v.shared || undefined,
-        layout: v.type === 'Form' ? fieldRefs(String(v.layout || '')).slice(0, 1200) : undefined,
+        form: v.type === 'Form' ? formOut(v.layout) : undefined,
+        report: reportOut(v),
       })),
     })),
     sides: sides.map((s) => ({
       id: String(s._id), name: s.name, type: s.type, layoutType: s.layoutType, default: s.default, roles: nms(s.roles),
       accreditView: nm(s.accreditView) || undefined, accreditForm: nm(s.accreditForm) || undefined,
-      menu: (parse(s.header, {})?.menuItems || []).map((m) => ({ title: m.title, to: nm(m.path) || m.link, children: (m.children || []).map((ch) => ({ title: ch.title, to: nm(ch.path) || ch.link })) })),
+      // `who` = roles of the item's userFilter: the panel menu may be role-filtered even when side.roles is empty
+      menu: (parse(s.header, {})?.menuItems || []).map((m) => ({ title: m.title, to: nm(m.path) || m.link, who: roleWho(m.userFilter), children: (m.children || []).map((ch) => ({ title: ch.title, to: nm(ch.path) || ch.link, who: roleWho(ch.userFilter) })) })),
       pages: (s.pagesOrder || []).map(nm),
     })),
     pages: pages.map((p) => ({ id: String(p._id), side: nm(p.side), name: p.name, type: p.type, conditions: filt(p.conditions), blocks: blocks(parse(p.content, {})) })),
@@ -121,7 +140,9 @@ const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp
       actions: actions.filter((x) => String(x.automation) === String(a._id)).sort((x, y) => (x.order || 0) - (y.order || 0)).map((x) => {
         const o = parse(x.options, {}) || {};
         const s = redact(refs(fieldRefs(JSON.stringify(o))));
-        return { type: x.type, description: x.description, conditions: filt(x.conditions), options: s.replace(/(https?:\/\/[^"?\\]+)\?[^"\\]*/g, '$1?<query-redacted>').slice(0, 2500) };
+        // recipients: field templates by name; literal mobiles masked (personal data)
+        const to = x.to ? refs(fieldRefs(String(x.to))).replace(/(09\d{2})\d{4}(\d{3})/g, '$1****$2') : undefined;
+        return { type: x.type, description: x.description, to, conditions: filt(x.conditions), options: s.replace(/(https?:\/\/[^"?\\]+)\?[^"\\]*/g, '$1?<query-redacted>').slice(0, 2500) };
       }),
     })),
   };

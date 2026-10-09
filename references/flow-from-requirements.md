@@ -4,9 +4,13 @@ Input: what the customer sent — an RFP or spec (Word, PDF), plain text, forms,
 transcripts, meeting notes. Output: an approved design package and a new base built from it.
 
 ```
-R0 setup → R1 inputs to text → R2 requirement catalogue + critic → R3 open decisions → R4 requirement report
-        → design package + review (design-package.md) → APPROVAL → build (build-new-base.md) → verify → hand over
+R0 setup → R1 inputs to text → R2 critical reading + ledger + catalogue + critic → R3 open decisions → R4 requirement report
+        → design package + review (design-package.md) → APPROVAL → build (build-new-base.md) → verify
+        → R5 gap audit against the document (gap-audit.md) → close the gaps → hand over
 ```
+
+The quality of this flow is decided in R2 and R5. A catalogue written from impressions and a build checked only against
+its own design both miss what the customer will test first (`rfp-analysis.md`, «Why this file exists»).
 
 ## R0. Setup
 
@@ -31,8 +35,12 @@ printf '{"owner":"<ownerUserId>","frontend":"http://localhost:9003"}\n' > $W/bui
 - If the text is a meeting transcript, separate requirements from conversation first and keep each speaker's words as
   the `source` quote.
 
-## R2. Requirement catalogue (read-only)
+## R2. Critical reading, ledger and requirement catalogue (read-only)
 
+0. **Read the document as the customer's critic first: `rfp-analysis.md`.** Write the pain map (`data/pains.md`) and
+   the sentence ledger (`data/ledger.json`, every sentence, table column and enum value traced), the workflow step
+   maps, the levels × features matrix, the day-one dependencies and the divergence register. The catalogue below is
+   built from the ledger; every requirement keeps its `ledger_refs`, `emphasis` and `levels`.
 1. **One agent per document section or business domain**, in parallel. One requirement is one testable capability,
    with:
    - `id` (prefix per domain), `domain`, `title`, `description`, `actors`;
@@ -46,7 +54,8 @@ printf '{"owner":"<ownerUserId>","frontend":"http://localhost:9003"}\n' > $W/bui
 3. Merge in code (a `{dropped: kept}` map for duplicates). `workflows/1-understand.js` can run steps 1–2 with the
    documents as the only source.
 
-Output: `data/catalogue.json`. Show the user the count per domain and per `kind`.
+Output: `data/catalogue.json`. Show the user the count per domain and per `kind`, the ledger coverage, the pain map
+and the top-emphasis items.
 
 ## R3. Open decisions
 
@@ -62,6 +71,14 @@ against the code. Give it to the user before the design package. A later scope c
 
 ## Then
 
-- Write and review the design package, and stop at the approval gate: `design-package.md`.
+- Write and review the design package, and stop at the approval gate: `design-package.md`. Its traceability section
+  maps **ledger lines**, not only requirement ids, and its divergence register quotes the sentences it departs from.
 - After approval, build: `build-new-base.md`. There is no real data, so the mock data in the build is free to rebuild.
 - Coverage is reported "after" only; there is no "before".
+
+## R5. Gap audit before calling it done
+
+After B2 (verification), audit the base against the document, not against the design: `gap-audit.md`. Close every
+configuration gap the audit finds (G6, G7) before the completion report. List the rest with their reason: code,
+external, customer input, or a decision the customer must confirm. A base whose report says "done" while the audit
+finds a critical item is not done.
