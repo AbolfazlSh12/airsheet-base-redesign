@@ -278,3 +278,38 @@ before quoting them to anyone.
   field. A base rebuilt from the atlas inherits those errors. Build the catalogue from the live base.
 - Check inputs for duplicates (`md5sum`): two differently named docx files were identical; a PDF was the transcript of
   the voice notes.
+
+## Lessons from the SafarClub build (2026-10, develop 7f263571 / automation-hardening f07ec397)
+
+- **Links are one-directional.** A `records` field has no mirror on the other table. Lookups and rollups join through a
+  link in either direction (`recordFieldsToFrom`), but `filterInField` lists in a template need the link on the **listed**
+  (child) table, and «create inside the form» fills only the **parent-side** link. Decide the direction per pair before
+  writing fields: child→parent for anything listed in a template or rolled up; parent→child only for pickers.
+- **Per-field permission writes are slow (10–20 s each, even on an empty table).** Use the UI's bulk `ufields`
+  (`editAll`: table × role × "edit"|"view"|other) through `L.call`, then `updateField` only for the restricted fields.
+- **`cfield` with `limits` and `createConstraint` log an `error: null` line in `changes.log` although the object was
+  saved**: the GraphQL read-back throws. Verify by listing, don't retry.
+- **DRY runs of multi-phase scripts**: a step that references objects created earlier in the same dry run (a link, a view, a
+  user role) fails with «not found» / `Cast to ObjectId failed for "undefined"`. Register a stub per created name in
+  dry mode, or run those steps for real (they are idempotent by name). Never cache a dry-run upload key: `uploadFile`
+  returns `DRY/…` and the real run would reuse it.
+- **A bash runner whose function ends with `grep -q … && { … }` returns 1 when the grep misses** and `|| exit 1`
+  silently stops the chain after the first step. End the function with an `if` and `return 0`.
+- **Seeded rows via `urecords` may get their rollups but not their lookups on the first write** (payouts' host mobile
+  stayed empty, the `has my mobile` scope then returned 0). A second upsert of the same ids computed them; check every
+  user-scope formula with `view-count-as.ts` after seeding.
+- **Computed money shows six decimals** (`"4500000.00000"` from rollups, `"4.00000000000"` from date arithmetic);
+  `round()` in the formula does not change the stored string. Set `format:"quantity"` (+ `symbol`) on every money
+  rollup/formula field; the UI then prints `۴,۵۰۰,۰۰۰٫۰۰ ریال`.
+- **Formula field refs are `$<fieldId>$`**; lookups are multi-valued (`mvindex($id$,0)`), `time_to_seconds(` is not
+  translated to SPL (use `strptime(substr(d,1,10),"%Y-%m-%d")`), dates are stored Gregorian `YYYY-MM-DD[ HH:mm]`.
+- **filter engine (`filter.match`) quirks** (verified with scenario tests): text/lookup/formula fields have no «is any
+  of» (the condition is silently true → use an OR `children` group); numeric 0 fails every number comparison (`if (data)`),
+  while the string "0" passes — formula outputs are strings, number fields are numbers.
+- **Kanban** columns come from the field's `possibleValues`; a view filter hides cards, never columns. Calendar accepts
+  only native `date` fields (copy lookup dates into native fields by automation); Gantt accepts lookups.
+- **Period automation conditions take literal operands only**; a threshold «N days from a settings table» is impossible.
+- **Autonumber has no prefix option.** SMS/notification actions keep `to` and `message` at the action's top level
+  (notification `to` is a mobile string); `createRecord` needs `options.record.base/table` and `action.table`.
+- The dev server on :3000 can disappear mid-build (another session). For screenshots, run your own backend from the
+  build worktree (`.claude/launch.json` + preview_start) at the same commit.
