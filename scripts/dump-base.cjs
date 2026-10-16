@@ -75,6 +75,7 @@ const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp
     if (v.type === 'Dashboard') return L.map((x) => `${x.type} by ${nm(x.by)} ${x.stats === 'count' ? 'count' : `${x.aggregate}(${nm(x.field)})`} «${x.title || ''}»`);
     if (v.type === 'Pivot') return L.map((x) => ({ groups: (x.groups || []).map(nm), bys: (x.bys || []).map(nm), measure: x.field ? `${x.aggregate}(${nm(x.field)})` : undefined }));
     if (v.type === 'Calendar' || v.type === 'Gantt') return L.map((x) => ({ start: nm(x.startTimeField || x.timeField), end: nm(x.endTimeField), title: nm(x.titleField) }));
+    if (v.type === 'Gallery') return L.map((x) => ({ look: x.type || 'cards', featuredSize: x.featuredSize, featuredImageHeight: x.featuredImageHeight, imageFit: x.imageFit, advancedHeader: !!x.advancedHeader, sorts: (x.customSortFields || []).length }));
     return undefined; };
 
   const blocks = (node, acc = []) => {
@@ -103,7 +104,7 @@ const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp
 
   const dump = {
     base: {
-      id: baseId, name: base.name, hostname: base.hostname, createdAt: base.createdAt, updatedAt: base.updatedAt,
+      id: baseId, name: base.name, owner: base.creator == null ? undefined : String(base.creator), owners: (base.owners || []).map(String), hostname: base.hostname, createdAt: base.createdAt, updatedAt: base.updatedAt,
       preferences: redact(base.preferences), menu: fieldRefs(base.menu), tableOrder: nms(base.tableOrder), sideOrder: nms(base.sideOrder),
     },
     roles: roles.map((r) => ({ id: String(r._id), name: r.name, isBlocked: r.isBlocked })),

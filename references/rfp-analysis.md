@@ -92,6 +92,9 @@ notifications) as **operational dependencies**. They are blockers until activati
 Customer-supplied values (recipient lists, thresholds, coefficients) go into a one-row settings table that formulas and
 automations read through lookups, never into hard-coded constants or empty `to` fields.
 
+- **Photos and the logo are day-one inputs** (`asset-pipeline.md` A0): one photo per product, category and city, the
+  logo as a vector. Without them the demo shows generated icons, and the customer judges the whole base by that.
+
 ## A8. Implementability: check the platform before saying "code"
 
 Before calling a need `build` (platform code), check this list. It was verified on develop in 2026-10. Re-check the

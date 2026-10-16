@@ -97,6 +97,11 @@ wrong, correct it in writing in the next report.
 
 ## G7. Verify and close
 
+- **A gap is «بسته شد» only when a dump taken after the closing step shows the object** (name/id in the report), and
+  the appendix row's verdict is rewritten from that dump. A closing script's log, a `changes.log` line or an agent's
+  report is a claim. On SafarClub the completion report listed five closures from the script; the next audit had to
+  re-verify each one from a new dump before it could cite them.
+
 - An independent recomputation of the new logic from raw rows (stock, routing, quotas, classes, statuses) in the
   project's `check-data`.
 - `check-constraints.ts` (every rule rejects a duplicate and accepts a fresh value).

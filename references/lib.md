@@ -180,3 +180,5 @@ from readable names in `mock-idmap.json`); `seedRows`/`tombstoneRaw` accept `MOC
   A draft page grants nothing.
 - **Splunk lag**: `listRecords` runs a Splunk search, which is eventually consistent. Right after a bulk write, allow about 1 s, which `bulkUpsert` already polls for. `getRecord` is cache-first.
 - **Session expiry**: while a script runs, `tools/cache.ts` also handles Redis session-expiry events. The dev server handles them too, so the duplicate is harmless.
+
+- **Two create mutations reject arguments their update twins accept** (2026-10-16): `cfield` has no `canview`/`canedit` and `cexpandtemplate` has no `defaultSides`; the GraphQL validation throws «args not in GraphQL schema» and a `field.create` / `expand.create` line with `error` lands in `changes.log`. `createField` and `createExpand` now split those keys off and write them with `ufield` / `uexpandtemplate` right after creation.

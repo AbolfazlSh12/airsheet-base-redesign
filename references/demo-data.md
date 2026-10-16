@@ -122,7 +122,7 @@ record templates, pick the showcase records the demo opens and seed every child 
   other mock mobiles (userProperty matching is substring-based).
 - Every status in every workflow, including open/public items (the real data may have none open — the public
   "opportunities" gallery was empty on real data), overdue items for SLA views, and events in the current month.
-- Images on every row of a table shown in a gallery with a cover.
+- Images on every row of a table shown in a gallery with a cover — the customer's real photos, mapped by name and uploaded once (`asset-pipeline.md`); generated icons only as a declared stop-gap.
 - Showcase records: a handful whose templates have every tab filled; the demo script opens those.
 - Tabs that are legitimately empty for some records (e.g. evaluation for trades without one) get a condition on a count
   rollup instead of fake rows.

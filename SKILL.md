@@ -55,6 +55,8 @@ template or view-display decision.
    verdict is re-checked by a skeptic.
 9. **"Done" means seen as the user.** Every portal is checked as its real user and as anonymous, every page is
    screenshotted as its audience, no list on a portal page is empty for the demo accounts (`scripts/crawl-lists.cjs`).
+   Catalogue-like galleries, category tiles and heroes show the customer's **real photos** (`references/asset-pipeline.md`);
+   a generated placeholder is a day-one dependency the report must name, not a finished page.
 10. **Platform code only on request.** Needs that configuration cannot meet are listed in the design as `build` items.
     If the user asks for the code: one branch per item, tests with a negative control, CI-identical run
     (`references/code-changes.md`). Know which checkout the dev server runs before debugging it.
@@ -66,6 +68,10 @@ template or view-display decision.
 13. **Reports state only what is true.** Every platform claim is backed by code read or a test run in this session;
     an empty section says «موردی وجود ندارد» instead of an invented item; the length follows the size of the problem
     (`references/requirement-report.md` «Truthfulness rules»).
+14. **Route every read and write through the skill's scripts.** The desktop app's permission classifier refuses ad-hoc
+    `node -e` Mongo reads, home-wide searches that name credential files, and one-off steps that create fields or
+    automations on a live base; `dump-base.cjs`, `splunk-query.ts` and `lib.ts` steps pass. When a creation step is
+    refused, leave the DRY-tested step in `build/steps/` and hand it to the user instead of retrying in another form.
 
 ## Setting up a project
 
@@ -80,6 +86,13 @@ cd <workspace>/cloud-back && AIRSHEET_BASE=<oldBaseId> DRY=1 npx tsx $W/build/sm
 export PLAYWRIGHT_MODULE=<path to the playwright package>   # for shot.cjs / crawl-lists.cjs
 export CHROMIUM_PATH=<path to chrome-headless-shell>
 ```
+
+Before the first lib run: the base's search engine may be addressed by a server-internal name (`https://cloud-log:8089`,
+resolved through /etc/hosts) that the shell's `HTTPS_PROXY` intercepts (every base-scoped query answers 503 while the
+default engine works). Put `export NO_PROXY=$NO_PROXY,cloud-log` and `AIRSHEET_BACKEND` in `$W/build/env.sh` and
+`source` it before every `npx tsx` run. Keep `$W` inside the customer's folder and hand `build/` (minus `.accounts.json`
+and `.auth/`) over with the completion package: a build whose `steps/`, `changes.log` and `keys.json` are lost cannot be
+extended or proven idempotent later (the SafarClub upgrade had to rebuild `project.json` from a dump and re-derive every id).
 
 Keep a diary in `$W/memory.md` from the first hour: ids, decisions, what happened, open items.
 
@@ -99,17 +112,19 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | Script | Does |
 |---|---|
 | `lib.ts`, `smoke-read.ts` | the only write path: getters, mutators, `createBase`, record and migration helpers (`references/lib.md`); read-only smoke test |
-| `dump-base.cjs`, `splunk-query.ts` | read-only structural dump with names instead of ids, secrets redacted; record counts |
+| `dump-base.cjs`, `splunk-query.ts` | read-only structural dump with names instead of ids, secrets redacted (`base.owner` = creator id, so a lost `project.json` can be rebuilt); record counts |
 | `extract-inputs.py` | text out of docx (+ embedded mockups), pdf and saved HTML descriptions |
 | `shot.cjs` | screenshots per role, desktop / `MOBILE=1` / `THEME=dark`, one saved login per role |
+| `shot-chrome.sh`, `probe-chrome.cjs` | no-Playwright fallback with the system Chrome: anonymous-page screenshots (desktop, and `MOBILE=1` through DevTools emulation) and a layout probe (`scrollWidth` vs viewport, widest elements, any JS expression, `SHOT=` screenshot) |
 | `view-count-as.ts` | rows a view returns for given mobiles and for anonymous, as the server evaluates them |
 | `crawl-lists.cjs` | opens pages as a role, clicks every tab, reports every empty list (exit 1) |
 | `portal-invariant.ts` | every view reachable from a portal side is user-scoped or listed for review |
 | `lint-base.cjs` | static lint of a dump for constructs the platform silently mishandles (link-grouped reports, never-computed formulas, signature conditions, empty recipients…); exit 1 on errors |
 | `check-constraints.ts` | proves every table constraint rejects a duplicate and accepts a fresh value (server's own check, read-only) |
 | `shot-record.cjs` | screenshot of a record dialog (expand template) as a role, by clicking a card on a page |
-| `workflows/1-understand.js`, `2-coverage.js`, `3-remediation.js` | Workflow-tool scripts: catalogue, coverage, gap plan |
+| `workflows/1-understand.js`, `2-coverage.js`, `3-remediation.js`, `4-feature-map.js`, `5-explain-base.js` | Workflow-tool scripts: catalogue, coverage, gap plan, feature ↔ requirement map with skeptics, plain-Persian explanation of every page/template/table/automation |
 | `build-report.py` + `report-template.html` | a self-contained RTL HTML report (design or comparison) from a JSON |
+| `make-brand.py`, `attach-images.ts`, `init-project.cjs`, `preflight.sh` | placeholder brand set (mark + wordmark, shaped Persian text); photos onto records by name; rebuild `project.json` from a dump; hour-zero environment check |
 
 ## Supporting playbooks
 
@@ -121,6 +136,8 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | Demo data with backup and restore | `references/demo-data.md` |
 | Many agents in parallel (ownership, BRIEF.md) | `references/brief-template.md`, `references/agent-prompts.md` |
 | A design system for the portals | `references/design-system-template.md` (filled example in `references/examples/`) |
+| Photos: asking for them on day one, mapping a folder to records, upload once, photo hero / banner recipe (SECTION + baked tint, `darken-hero.py`), mobile overflow probe | `references/asset-pipeline.md` |
+| Preparing a built base for a customer demo: plain-Persian user guide and client presentation, brand placeholder, dashboard pattern, hand-over checklist | `references/demo-readiness.md` |
 | Platform code a need requires | `references/code-changes.md` |
 
 ## Deliverables
@@ -135,5 +152,8 @@ Persian for anything the customer or the product team reads.
 - **Design package** (`design/DESIGN.md` + an HTML version for the customer) — `references/design-package.md`.
 - **Completion report**: security findings first, requirement coverage (flow 1: old base vs new base), what was built
   with ids, decisions and their defaults, the go-live list.
+- **Feature → requirement map** («این قابلیت کدام جمله‌ی سند را برآورده می‌کند»): one row per built capability with its
+  objects (names + ids), the requirement ids and the document sentence, verified against a dump taken *after* the last
+  write. It is what a customer asks first («این چه کار می‌کند؟») and it is the input of the next audit.
 - **Product feedback**: platform bugs and feature ideas met on the way, categorised, for the Airsheet team.
 - New general platform lessons go into `references/platform-lessons.md`, so the next project benefits.

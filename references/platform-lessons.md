@@ -256,6 +256,27 @@ before quoting them to anyone.
   `header.menuItems[]` gets `icon` (Lucide name) and `iconColor`; its layout also calls the owner-only `sides` query
   (harmless 403 in the console).
 
+## Page HTML sanitiser (cloud-front 5b1968b5e, 2026-10-15)
+
+- Every stored HTML value (TEXT, ALERT, generated text, long-text cells, titles) reaches the DOM only through
+  `v-safe-html` → `sanitizePageHtml` (`src/utils/pageHtml.js`, sanitize-html). Inline styles are filtered to a whitelist:
+  color, background-color, text-align, text-decoration, font-size/weight/style/family, direction, width, height,
+  max-width, max-height, aspect-ratio, margin, padding, border, border-radius, display, vertical-align. Any value with
+  `url(` or `expression(` is dropped, as are the classes fixed/absolute/sticky/fullscreen/inset/z-/top-/bottom-/left-/right-.
+- Everything else disappears silently: `background` shorthand (so gradients and photos), position, overflow, min-height,
+  line-height, opacity, gap, grid-template-*, flex-wrap, text-shadow, box-shadow. `<a href>`, `<img src>` (http/https/data)
+  and the TEXT_TAGS / SVG_TAGS lists survive. The sanitiser existed before (69952fb9e, 2026-10-04) but allowed those
+  styles, so screenshots taken before 2026-10-15 are no evidence that an HTML hero still renders — check
+  `git log -- src/utils/pageHtml.js` before trusting old captures.
+- Consequences for a build: photo hero / banner = SECTION (`backgroundImage` full URL, `padding`, `radius`, `filter: []`,
+  a TEXT child with white text) with the tint baked into the JPEG (`scripts/darken-hero.py`), asset-pipeline A5; card
+  grids = COLUMNS3/4 (`column1..4 = {label, name, splitter, content:{name, blocks}}`, nested splitter 33/50 or
+  25/33/50); flat colours via `background-color`; buttons and chips as `display:inline-block` with margins; a round
+  badge centred with padding instead of line-height. A SECTION's children render through NotionViewer inside the padded
+  box, each block with its own `px-4 py-2`.
+- Two adjacent STATS blocks are two independent grids (`repeat(auto-fill, minmax(180px, 1.9fr))`, or centred equal-width
+  flex rows when the page is centre-aligned), so 4 + 6 tiles render as 4 / 5 / 1 rows: put all tiles in one STATS block.
+
 ## Uploads, images and backgrounds
 
 - A script uploads with `L.uploadFile` (= `uploadBase64`, the body of the `upload` mutation). It writes to the shared S3
@@ -313,3 +334,52 @@ before quoting them to anyone.
   (notification `to` is a mobile string); `createRecord` needs `options.record.base/table` and `action.table`.
 - The dev server on :3000 can disappear mid-build (another session). For screenshots, run your own backend from the
   build worktree (`.claude/launch.json` + preview_start) at the same commit.
+
+## Lessons from the SafarClub upgrade (2026-10-14, develop a2cc1d346)
+
+- **The base's engine is a server-internal hostname and the shell proxy eats it.** `master.getEngine(baseId)` returned
+  `https://cloud-log:8089` (resolved by /etc/hosts to the tunnel) while the default engine is `127.0.0.1:8089`. With
+  `HTTPS_PROXY` exported and `NO_PROXY=localhost,127.0.0.1`, every base-scoped `runQuery` (lib `listRecords`,
+  `updateRecord`, `exportRecords`) answered **503** and `splunk-query.ts` (engine "") worked, which looks like a Splunk
+  outage. `export NO_PROXY=$NO_PROXY,cloud-log` fixes it; keep it in `build/env.sh`.
+- **`base.owner` does not exist**: the Base model has `creator` and `owners[]`. `dump-base.cjs` now prints `owner` =
+  creator so `project.json` can be rebuilt from a dump when the build folder is gone.
+- **A `count` field joins only through a real `records` field.** `rollupJoin` pointing at a text lookup («شهر») or at a
+  lookup of records («شهر (لینک)», whose values even look like links) yields 0 on every parent, and changing the join
+  does not recompute existing rows (touching the parent row did not either). The fix is a `records` field on the child
+  (backfilled from the lookup, kept by an automation for new rows) — the same "copy the lookup into a native field"
+  pattern as Calendar dates.
+- **Chrome's plain `--screenshot` flag is not a screenshot tool for these pages**: at a phone window width it rendered a
+  clipped page (right edge cut) that looked like an overflow bug, and at desktop width it produced an all-white picture of a
+  page whose DOM had 1,700 characters and 37 loaded images. The DevTools path (`Page.captureScreenshot`, with
+  `Emulation.setDeviceMetricsOverride` for phones) was right every time: `scripts/shot-chrome.sh` now always goes through
+  `probe-chrome.cjs SHOT=…`, and prints the page's text length next to each file so an empty capture is caught.
+- **Galleries and GALLERYMENU render empty in a screenshot taken before their S3 images loaded**; the same page was
+  complete at `WAIT=30000`. Re-shoot before calling a block broken.
+- **TitleDivider page buttons work**: `showButton:true, linktype:"page", side, path` renders a real button (previously
+  only the dead default button had been seen).
+- **Gallery `advancedHeader` shows search and `customSortFields` buttons**; the option chips of a singleSelect that is
+  in the view's `fields` appeared on the cards (as chips) rather than in the header on this build.
+- **The desktop app's permission classifier** refused: an ad-hoc `node -e` mongoose read of `users`/`bases`, a
+  home-wide `find` naming `.accounts.json`, and a one-off step that created a field + automation + 42 record writes.
+  It allowed the skill's scripts, demo-row updates, page/view updates and uploads. Hand refused creation steps to the
+  user (DRY-tested, documented) instead of retrying in another shape.
+
+## Lessons from the SafarClub demo round (2026-10-16)
+
+- **`base.logo` (a storage key) is shown on the base's login page** and `header.logo` / `header.darkLogo` on every side;
+  the sidebar layout and the website header print the side name next to the logo, so a wordmark there duplicates the
+  name — use the square mark, keep the wordmark for the footer brand widget (with `title:""`).
+- **Form `defaultValues` are record-shaped** (`ViewFormBody.vue` sets `setting.defaultValues = record`): a link default is
+  `[{_id, primaryFieldValue}]`, a select default the option text. Setting the «تنظیمات» link default on three forms
+  closed a critical gap («متن نسخه‌ی فعال» empty on every real case) with one `updateView` each.
+- **A `count` whose `rollupJoin` was changed does not recompute existing parents** (touching the parent did not help);
+  creating the real `records` link and writing it on every child row recomputed the counts within ~90 s.
+- **The desktop app's browser pane shares the owner's login and it expires**: a pane that showed the team dashboard
+  at 18:00 showed the login page at 20:00. Logged-in screenshots need the test accounts in `.accounts.json` (the
+  agent must never type the owner's password); otherwise template changes are verified structurally only and the
+  report says so.
+- **Headless captures taller than the page end** (window 3400 px, body 2526 px) leave an empty band below the footer;
+  crop to `document.body.scrollHeight`, and find the footer by its copyright text, not by a `<footer>` tag (the site
+  footer is a `div.tw-mt-auto`).
+- **`cfield` rejects `canview`/`canedit` and `cexpandtemplate` rejects `defaultSides`** («args not in GraphQL schema»); set them with the update mutations after creation (`lib.ts` does this since 2026-10-16). A rejected create leaves no object but does leave an `error` line in `changes.log` — say so in the report instead of hiding the line.

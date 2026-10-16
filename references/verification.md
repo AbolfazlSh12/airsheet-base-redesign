@@ -65,6 +65,17 @@ conditions, not the trigger timing: still do one manual run per process with tes
   means the page looks unfinished (one project had 11 pages ≥ 44 %).
 - An independent **visual QA reviewer** (read-only) grades every page P0/P1/P2 and answers "would I show this to the
   customer today?" per portal. One project: 41 findings (1 P0 — a dashboard whose KPIs were all 0).
+- **No Playwright?** `scripts/shot-chrome.sh` (system Chrome) screenshots anonymous pages, desktop and `MOBILE=1`; the
+  mobile path goes through DevTools emulation because `google-chrome --screenshot --window-size=390,…` renders a clipped
+  picture that looks like a horizontal-overflow bug when there is none. Prove overflow with `scripts/probe-chrome.cjs
+  <url>` (`MOBILE=1`): `scrollWidth` must equal the viewport; only carousel slides may sit off-canvas.
+- **Images loaded?** A gallery, GALLERYMENU or hero can be missing from a screenshot taken before its S3 images arrived
+  (one home page looked "empty" at 15 s and complete at 30 s). Re-shoot with `WAIT=30000` before reporting a bug.
+- **Word-wrap on cards**: titles or prices broken mid-word in a `featured` gallery mean the card is too narrow
+  (`featuredSize:"lg"`, design-guide §6); counters that show «۰» on every card are a join bug, not data (a `count`
+  needs a real `records` field as `rollupJoin`; a text or lookup copy never matches).
+- **Visible numbers on public pages** (counts on city/category cards, KPI tiles) are read as a visitor and compared with
+  an independent count from the rows (`listRecords`) before the page is called done.
 
 ## 5. Data coverage (before a demo)
 
@@ -94,4 +105,6 @@ five dashboard tabs were empty for both portal users — readable mock ids broke
 - `DRY=1` diff read by the agent before every real run; `changes.log` holds `{kind,id,diff:{from,to}}` so any line can
   be reverted. Snapshot the structure (read-only Mongo dump) before a phase starts.
 - Re-dump the base after a phase and diff it against the previous dump (names instead of ids makes the diff readable).
+- **Closures claimed after an audit are re-verified from a new dump**, never from the closing script's log: the
+  completion report lists each closed gap with the dump evidence (object name/id) that proves it landed.
 - A teammate's concurrent edits show up as unexplained diffs: find the actor in `index=behavior` before reverting.
