@@ -177,10 +177,10 @@ mat_rows = "".join(
 
 data = {"t": by["t"], "r": by["r"], "s": by["s"], "p": by["p"], "KIND": KIND, "STYPE": STYPE, "LET": LET}
 CSS = """
-.bgraph{--g-bg:#fbfcfc;--g-fg:#17262b;--g-mu:#56676c;--g-ln:#cdd8d6;--g-r:#6a4fb3;--g-s:#0d6b6e;--g-p:#a35b00;--g-t:#2457a3;--g-card:#ffffff;
+.bgraph{--g-bg:#fbfcfc;--g-fg:#17262b;--g-mu:#56676c;--g-ln:#cdd8d6;--g-r:#6a4fb3;--g-s:#0d6b6e;--g-p:#a35b00;--g-t:#2457a3;--g-card:#ffffff;--g-d:#b3261e;
  display:flex;flex-direction:column;gap:12px;color:var(--g-fg);direction:rtl}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .bgraph{--g-bg:#131c1f;--g-fg:#e2ebe9;--g-mu:#9fb1b3;--g-ln:#33454a;--g-r:#b59cf0;--g-s:#5cc6c7;--g-p:#f0b35c;--g-t:#8fb5f2;--g-card:#182429}}
-:root[data-theme=dark] .bgraph{--g-bg:#131c1f;--g-fg:#e2ebe9;--g-mu:#9fb1b3;--g-ln:#33454a;--g-r:#b59cf0;--g-s:#5cc6c7;--g-p:#f0b35c;--g-t:#8fb5f2;--g-card:#182429}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .bgraph{--g-bg:#131c1f;--g-fg:#e2ebe9;--g-mu:#9fb1b3;--g-ln:#33454a;--g-r:#b59cf0;--g-s:#5cc6c7;--g-p:#f0b35c;--g-t:#8fb5f2;--g-card:#182429;--g-d:#f28b82}}
+:root[data-theme=dark] .bgraph{--g-bg:#131c1f;--g-fg:#e2ebe9;--g-mu:#9fb1b3;--g-ln:#33454a;--g-r:#b59cf0;--g-s:#5cc6c7;--g-p:#f0b35c;--g-t:#8fb5f2;--g-card:#182429;--g-d:#f28b82}
 .bgraph h3,.bgraph h4{margin:0}
 .bgraph .bg-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--g-mu)}
 .bgraph .bg-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
@@ -203,8 +203,8 @@ CSS = """
 .bgraph table{border-collapse:collapse;font-size:.82rem;width:100%}
 .bgraph th,.bgraph td{border-bottom:1px solid var(--g-ln);padding:6px 9px;text-align:right;vertical-align:top;white-space:nowrap}
 .bgraph thead th{color:var(--g-mu)} .bgraph tbody th span{display:block;font-weight:400;color:var(--g-mu);font-size:.76rem;white-space:normal;max-width:16rem}
-.bgraph td i{font-style:normal;display:inline-block;padding:0 6px;border-radius:99px;margin:1px;border:1px solid var(--g-ln)}
-.bgraph td i.aV{color:var(--g-t)} .bgraph td i.aC{color:var(--g-s)} .bgraph td i.aE{color:var(--g-p)} .bgraph td i.aD{color:#c0392b}
+.bgraph td i{font-style:normal;display:inline-block;padding:1px 8px;border-radius:99px;margin:1px;border:1px solid var(--g-ln)}
+.bgraph td i.aV{color:var(--g-t)} .bgraph td i.aC{color:var(--g-s)} .bgraph td i.aE{color:var(--g-p)} .bgraph td i.aD{color:var(--g-d)}
 """
 JS = """
 (function(root){
