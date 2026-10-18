@@ -53,6 +53,65 @@ before quoting them to anyone.
 - A view shown to both staff and portal users cannot carry `has my mobile` (staff searches send the view's own filters).
   Make a copy «… (پرتال)» plus a template limited to the portal side; check with `scripts/portal-invariant.ts`.
 - Self-registration depends on the **server-wide** `auth.register.enable`, not on `base.preferences.signup`.
+- **A user side without `userrole.accreditForm` shows «عدم دسترسی» to every newly registered user** (AppPage.vue: the
+  side query returns `accreditForm` for an unaccredited user and the portal gate renders that Form view; otherwise
+  `side.accessDenied`). Give each user role a short registration form on its own table (name, the `userProperty`
+  field, one or two extras) — the platform does **not** fill the mobile in, so the form text must say "the number you
+  signed in with". `redirect:true, redirectURL:"/b/<base>/<side>/<page>", delayedRedirect:true` (relative paths pass
+  `safeUrl`) sends them into the portal after submit. The site header's `dynamicButton.hideAfterLogin` hides the only
+  link to the portal after login — keep it visible and name it after the portal. Test the whole journey with a fresh
+  mobile number before a demo (demo-readiness).
+- **Do not put a link `create` picker for the identity table in a public form.** The «جدید» dialog on a visitor side
+  answers 401 («ابتدا وارد حساب کاربری شوید») to a signed-in visitor and duplicates the mobile for a returning one.
+  Ask for the identifier as a plain field on the request row (`type:"mobile"`) and let the row's identity formula fall
+  back to it: `coalesce(mvindex($<lookup of linked mobile>$,0), $<typed mobile>$) . ""` — the mobile-based record role
+  then shows the request in the right portal before staff link the customer. Show the typed field beside the link
+  field in staff queues and the staff template so linking is one click.
+- **Identity chains of child tables must follow the same fallback.** Items, cases and transactions usually derive
+  «موبایل مسافر (متن)» from `lookup(order.customer mobile)`; once an order can carry a typed mobile instead of a linked
+  customer, give each child a lookup of the typed field through the order link and make the child formula
+  `coalesce(mvindex($cust$,0), mvindex($typed$,0)) . ""` — otherwise the portal user sees the order but never its
+  items, cases or payments. Tables that chain through a case follow automatically. Audit: list every VIEW block in
+  portal pages/templates with its table, filters and record-role field, then trace each role field's lookup chain.
+- **An empty tab is not always a bug.** A fresh request has no items until staff run the inquiry; put a one-line TEXT
+  above such lists saying when rows appear, and show what the user asked for (a «درخواست شما» card) so the record never
+  looks blank.
+- **Codes and vouchers: a typed text field, never a link picker on a public form.** A link picker (even one bound to a
+  "active only" `linkView`) lists every code to anyone who opens the form. And an automation cannot turn typed text into
+  a link: `modifyRecord` resolves only `{record:id}` / the source primary field into `[{_id, primaryFieldValue}]` and
+  stores any other string as-is in a `records` field. So: text field on the request row, shown next to the link field in
+  the staff template (staff links it where they already set the final percentages), the result (discount amount) shown
+  on the customer's record. Say in the hand-over that auto-linking needs a platform feature.
+- **A form's thank-you page keeps only TEXT across an editor round-trip.** A MENU block written into
+  `layout[0].thankYouPage.notion.blocks` by script disappeared within the hour once the owner opened the form in the
+  editor (the thank-you builder re-saves its own block set). Put the call-to-action in the TEXT block as a styled
+  `<a href="/b/<base>/<side>/<page>">` (inline-block, background-color, padding, border-radius — all allowed), and
+  re-check script-written view layouts after the customer has touched them in the UI.
+- **"New" on a list instead of a separate form page.** A VIEW block grows the platform's new-record button with
+  `newable:"all"`, `newForm:true`, `buttenText`, `buttonColor`, `newFormPage:{id:"<blockId>-nf", type:"VIEW",
+  details:{value:<form view id>}}` — and `lockSettings:false`, because ViewGallery hides the button for non-owners while
+  settings are locked (`!pageContext.lockSettings || iowner`); staff lists can use `newable:"access"` (table icanadd).
+  The dialog form has no record context, so a portal user's new row is not auto-linked: ask the identity (mobile) in
+  the form and rely on the text-formula fallback. Retire a page by `setPagePublished(id,false)` + removing it from
+  `pagesOrder` and `header.menuItems`; never delete it.
+- **Script-built layouts must carry the blocks' mount-time defaults, or the owner sees «ذخیره شد» on every open.**
+  For an owner, `composables/record.js` deep-watches the template layout and calls `uexpandtemplate` on any mutation
+  (pages: `composables/side.js` → `upage`). Blocks that mutate themselves on mount: TitleDividerBlock `initDefaults()`
+  (title, showLine, showButton, buttonText «مشاهده همه», showIndicator, indicatorSizeKey md, indicatorOrient vertical,
+  linktype page, openInNewTab false, url "", side = current side, indicatorColor/buttonColor var(--blue2),
+  buttonTextColor #ffffff, lineColor var(--gray3), titleColor ""), NotionViewer `onMounted` (inserts an empty TEXT
+  into any nested content with 0 blocks: section, column, tab, PROGRESS state — a different record renders a
+  different state, so it never settles), Columns2/3/4 (splitters 50 / 33.33,50 / 25,33.33,50), ViewApp `initToolbarDefaults()` (a VIEW block with
+  `viewToolbar:"visible"` gets showSettings/showFilter/showSort/showGroup/showSearchFields/showPageSize = true; TABS
+  render one tab at a time, so every tab switch on a staff page was another save). Write every nested
+  content with at least one block and every TitleDivider with the full key set; `steps/102-quiet-templates.ts` in the
+  SafarClub workspace is the generic normaliser (run it after any scripted layout change). Proof technique: diff the
+  layout after the owner opened a record against the script's last write.
+- **Portal users cannot pick their own row in a visitor-side form.** The link picker on a visitor side returns nothing
+  for them and «جدید» duplicates the mobile. Put the request form inside the user side: a page with an `ExpandRecord`
+  (profile view, `profileCondition:"has my mobile"`) whose template holds a VIEW block with
+  `autoLinkField:<link field to the profile table>` — the created row links to the viewer's own record (this is how
+  «ارسال مدرک» / «درخواست پشتیبانی» work). Keep the visitor-side form for anonymous visitors (link `create`).
 - **Field `canedit` is not applied on create** (`record.ts` create: «TODO: check access»), so form defaults for fields
   a role may not edit still land. **On update** only `canedit` fields survive, plus the clicked button: a button's
   `doneProcess` / `signs` writes happen in the invariants after the permission filter. So a status field can be
@@ -274,6 +333,10 @@ before quoting them to anyone.
   25/33/50); flat colours via `background-color`; buttons and chips as `display:inline-block` with margins; a round
   badge centred with padding instead of line-height. A SECTION's children render through NotionViewer inside the padded
   box, each block with its own `px-4 py-2`.
+- The same sanitiser runs inside record templates (`ExpandTemplate.layout.blocks`, incl. blocks nested in SECTION /
+  COLUMNS / TABS), not only in `Page.content.blocks`: the SafarClub audit first scanned pages only and missed the two
+  portal-dashboard template heroes for a day. `scripts/scan-html-styles.py <all-objects.json>` lists every TEXT block
+  whose inline styles would be stripped, pages and templates alike.
 - Two adjacent STATS blocks are two independent grids (`repeat(auto-fill, minmax(180px, 1.9fr))`, or centred equal-width
   flex rows when the page is centre-aligned), so 4 + 6 tiles render as 4 / 5 / 1 rows: put all tiles in one STATS block.
 

@@ -58,3 +58,19 @@ was right.
 - The presentation's table ۴ matches the final skeptic list (`final_implemented`) — regenerate it after the last write.
 - The owner has: the three HTML files, the steps folder, the open-items list (what needs the customer), and knows which
   four files to replace when the real logo arrives.
+
+## D9. The first-time user journey, end to end
+
+Before the demo, walk the whole path once with a **fresh mobile number**: public site → portal button → create account
+→ registration form (the user role's `accreditForm`) → portal home → first request from inside the portal → the row
+appears in the staff queue. Every hop that dead-ends (access denied, a vanished header button, a thank-you page with no
+link, an empty link picker) is a configuration gap; the SafarClub round of 2026-10-17 hit all four.
+
+## D10. The client copy is a different document from the demo guide
+
+The customer reads sentences, not codes: never a requirement code, object id or automation code in the client file — build
+it from data and let the generator strip them (`[A-Z]{2,4}-[A-Z]?\d+`, 24-hex ids, `A\d+[ab]?`) and drop presenter-only
+sentences (screenshots, "today", "say to the client", audit notes). Per page: what it is for, its modules (lists, forms,
+cards, counters, shortcuts, tabs, status bar — derived from the block inventory), what the user does, which automations
+take over (plain names), and the customer's own sentences it answers. One plain-language catalogue of every automation
+(when / does / the customer's words) is the appendix. The SafarClub generator is `_src/build_07_client.py`.
