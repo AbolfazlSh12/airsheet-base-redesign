@@ -72,10 +72,31 @@ Run two agents in parallel, both read-only:
 
 Fix what they find, note what you rejected and why.
 
+## The architecture graph (before anything is built)
+
+Every HTML that proposes a base to be built (the design package, and a requirement report that already proposes a
+design) shows that base as a graph, so the customer sees who enters where and reaches what before a single table
+exists. Write `design/base-graph.json` from sections 2, 3, 5 and 6 (the spec format is in the docstring of
+`scripts/base-graph.py`): tables with row counts, key fields and child→parent links; roles with kind, row scope and
+per-table rights (V/C/E/D); sides with their roles and menu pages; pages with their audience and the tables they list.
+
+```bash
+python3 build/base-graph.py design/base-graph.json design/base-graph.fragment.html   # paste into the report
+python3 build/base-graph.py design/base-graph.json design/base-graph.html --page     # standalone page
+```
+
+The output is self-contained (inline SVG, light/dark, RTL): four columns (roles → sides → pages → tables), dashed
+arcs for table links, a click on any node lights up its paths and shows its fields, scope or rights, and an access
+matrix follows. With `build-report.py` set `"graph"` in the JSON. The script stops on a dangling id and warns about
+design holes (a table nothing reaches, a page on no side, a role that enters no side, a page that lists a table its
+audience has no view right on); fix each warning or say in the package why it stays. The spec is a design artefact:
+when the design changes, regenerate the graph, and `gap-audit.md` G1 can diff it against the live base.
+
 ## Presenting it
 
 - A Persian HTML version for the customer (`build-report.py` with a design JSON, or a hand-written page), with the
-  relation diagram, the access matrix and the page list. Publish or share only when the user asks.
+  architecture graph (above), the relation diagram, the access matrix and the page list. Publish or share only when
+  the user asks.
 - In chat: a short summary, the counts (tables, fields, automations, portals, pages), the decision list, the `build`
   and `external` items, the effort, and the questions only the user can answer.
 

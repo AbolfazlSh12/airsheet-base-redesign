@@ -48,6 +48,9 @@ this report to the customer and to the product team, so it has to be true and us
 7. **Other.** Real risks, external dependencies (gateways, SMS, KYC, legal), data migration, security, go-live
    prerequisites. Leave nothing here that only fills space.
 
+When the report also proposes the base to be built (common in flow 2), include the architecture graph from
+`scripts/base-graph.py` (`design-package.md` «The architecture graph») next to that proposal.
+
 Appendix: a requirement coverage table. For each requirement give its verdict (config / config with workaround /
 platform code / external / out of scope) and how it is met. For a small input, a few rows in section 0 replace the
 table.

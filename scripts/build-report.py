@@ -14,6 +14,7 @@ report.json (paths relative to data_dir unless absolute; every section except th
   "candidates": [{"key": "NEW", "label": "نسخه‌ی نو", "short": "نو", "id": "<id>", "dump": "dump_<id>.json"}],
   "domains": [["DOM", "دامنه‌ی نمونه"], ["GAP", "شکاف‌های کشف‌شده توسط منتقد"]],   # display order
   "new_requirement": {"prefix": "NEW", "eyebrow": "…", "title": "…", "intro": "…"},
+  "graph": "base-graph.json",                    # base-graph.py spec → «ساختار» section (roles, sides, pages, tables)
   "text": {"page_title", "eyebrow", "h1", "lede", "date", "answers_title", "glance_title",
            "answers": [{"q": "…", "verdict": "…", "tone": "ok|part|miss", "text": "… {N} … {covered_NEW} …"}],
            "glance_rows": [["کاربرد", "<baseline>", "<cand 1>", "…"]],
@@ -149,6 +150,13 @@ if nr:
         f'<div class="status"><span class="chip c-{r["v"][k0]["verdict"]}">{dot(0)}{E(cands[0]["short"])}: {VL[r["v"][k0]["verdict"]]}</span><span>{E(r["v"][k0]["gaps"])}</span></div></div>'
         for i, r in enumerate(r for r in reqs if r["domain_key"] == nr["prefix"] and k0 in r["v"]))
     section("newreq", nr["eyebrow"], nr["title"], t(nr.get("intro")), f'<div class="steps">{steps}</div>')
+
+if C.get("graph"):
+    import subprocess, tempfile
+    g = C["graph"] if os.path.isabs(C["graph"]) else f"{DIR}/{C['graph']}"
+    with tempfile.NamedTemporaryFile(suffix=".html") as f:
+        print(subprocess.run([sys.executable, f"{here}/base-graph.py", g, f.name], check=True, capture_output=True, text=True).stdout, end="")
+        section("graph", "ساختار", T.get("graph_title", "نقش‌ها، درگاه‌ها، صفحه‌ها و جدول‌ها"), "", open(f.name).read())
 
 if wf2 and wf2.get("design"):
     WIN = {"new": cands[0]["short"], "old": "قدیمی", "tie": "برابر", "unclear": "نامشخص"}

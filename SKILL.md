@@ -110,6 +110,7 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | `shot-record.cjs` | screenshot of a record dialog (expand template) as a role, by clicking a card on a page |
 | `workflows/1-understand.js`, `2-coverage.js`, `3-remediation.js` | Workflow-tool scripts: catalogue, coverage, gap plan |
 | `build-report.py` + `report-template.html` | a self-contained RTL HTML report (design or comparison) from a JSON |
+| `base-graph.py` | the planned base as an interactive graph (roles → portals → pages → tables, table links) + access matrix, from `design/base-graph.json`; flags unreachable tables, pages on no side, pages that list a table their audience cannot view |
 
 ## Supporting playbooks
 
@@ -132,7 +133,8 @@ Persian for anything the customer or the product team reads.
 - **Requirement report** (HTML, or Word on request) each time a requirement or a scope change arrives: questions for
   the customer, decisions for the user, blockers, verified bugs, targeted improvements, new features, other —
   `references/requirement-report.md`.
-- **Design package** (`design/DESIGN.md` + an HTML version for the customer) — `references/design-package.md`.
+- **Design package** (`design/DESIGN.md` + an HTML version for the customer, which always carries the architecture
+  graph from `scripts/base-graph.py`) — `references/design-package.md`.
 - **Completion report**: security findings first, requirement coverage (flow 1: old base vs new base), what was built
   with ids, decisions and their defaults, the go-live list.
 - **Product feedback**: platform bugs and feature ideas met on the way, categorised, for the Airsheet team.
