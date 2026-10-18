@@ -313,3 +313,19 @@ before quoting them to anyone.
   (notification `to` is a mobile string); `createRecord` needs `options.record.base/table` and `action.table`.
 - The dev server on :3000 can disappear mid-build (another session). For screenshots, run your own backend from the
   build worktree (`.claude/launch.json` + preview_start) at the same commit.
+
+## Lessons from the advanced-form demo (2026-10-18, develop cdede884 / e86b81576)
+
+- **Number `format:"percent"` expects a fraction** (0.25 shows 25 %); a formula returning 25 prints «۲٬۵۰۰ ٪».
+- **A page whose `content.name` is "" is renamed «بدون عنوان»** after the owner opens it (editor syncs the name). Give
+  every page `content.name` = its name and keep only a subtitle in the header TEXT.
+- **Selecting a collaborator in a field with `notify` sends a real SMS** (`invariants/assignee.ts`). Set `notify:false`
+  during builds and UI tests; turn it on at go-live.
+- **v1 submit rule «A is before B» with both dates empty counts as violated**: the form stays on «در حال ذخیره سازی»
+  with no message. Add «is not empty» conditions for both dates to the rule.
+- **v2 forms do not show a server validation error** (field limit, required): the response carries the message, the UI
+  stays on «در حال ذخیره سازی» with the button disabled (seen as owner). Mirror important limits as page-required rules.
+- **«جدید» inside a form link field saves the child immediately**: abandoning the parent leaves an orphan row; failed
+  submits also consume autonumbers.
+- **Cascading link pickers**: Gallery picker view filter `{"operator":"has any of","operand":"{<form table>.<link field>}"}`
+  + RECORD `immutable:{field:[is empty on the parent field]}` locks the child picker until the parent is chosen.
