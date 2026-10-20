@@ -114,6 +114,18 @@ The pre-save hook has two effects:
 
 Types are `match`, `create`, `form` (forms = view ids), `update` (fields or allFields plus an optional `view` filter), `delete`, `cron` and `period`.
 
+**Schedules.** Write only a `cronType`/`cron` pair that the editor itself writes. The lib refuses anything else (`scripts/editorSchedule.ts`). An invented value such as `cronType: "custom"` shows raw in «نوع بازه زمانی», and the user cannot set it back after switching the type, because the switch overwrites the cron.
+
+| need | cronType | cron |
+|---|---|---|
+| every N hours, optionally only from A to B | `hourly` | `M */N * * *` / `M A-B/N * * *` |
+| several times a day at evenly spaced hours (7 and 13) | `hourly` | `M 7-13/6 * * *` |
+| every day at H:M | `weekly` | `M H * * *` («هر روز») |
+| one weekday | `weekly` | `M H * * D` (D 0–6, Saturday = 6) |
+| a Jalali day of the month | `jalaliMonthly` | `M H d * *` |
+
+`daily`, `custom`, `monthly` (Gregorian, only kept on old automations) and `minutely` (reminder preset, not on develop) are rejected. Uneven hour lists, several weekdays and minute steps have no editor form. Split them into separate automations, or report the missing editor capability; do not write a raw cron.
+
 The lib refuses `active:true` while any action is external, unless `ALLOW_LIVE=1`. It also refuses `active` in `createAutomation`.
 
 **Records.** Every call is scoped to this base and table.

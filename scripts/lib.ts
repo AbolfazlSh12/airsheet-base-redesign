@@ -2,6 +2,7 @@
    Copy this file (and project.json) into <work>/build/ and run scripts from the cloud-back checkout with `npx tsx`. */
 import fs from "fs";
 import { randomUUID } from "crypto";
+import { editorScheduleError } from "./editorSchedule";
 
 const cfgFile = `${__dirname}/project.json`;
 const P: Record<string, string> = fs.existsSync(cfgFile) ? JSON.parse(fs.readFileSync(cfgFile, "utf8")) : {};
@@ -29,6 +30,8 @@ const { read: readRecord } = require(`${APP}/src/modules/database/appendb`);
 const master = req("modules/database/master");
 const typeDefs = req("api/graphql/typeDefs");
 
+// develop moved the automation models under domain/ (2026-10); older checkouts keep them in models/.
+const AUTOMATION_MODELS = fs.existsSync(`${APP}/src/modules/automation/domain/models`) ? "modules/automation/domain/models" : "modules/automation/models";
 export const M: Record<string, any> = {
   Base: req("modules/database/models/Base"),
   Table: req("modules/database/models/Table"),
@@ -40,8 +43,8 @@ export const M: Record<string, any> = {
   ExpandTemplate: req("modules/database/models/ExpandTemplate"),
   Side: req("modules/notion/models/Side"),
   Page: req("modules/notion/models/Page"),
-  Automation: req("modules/automation/models/Automation"),
-  Action: req("modules/automation/models/Action"),
+  Automation: req(`${AUTOMATION_MODELS}/Automation`),
+  Action: req(`${AUTOMATION_MODELS}/Action`),
 };
 const R: Record<string, any> = {
   ...req("modules/database/resolvers/index").Mutation,
@@ -427,6 +430,12 @@ async function assertCanActivate(automationId: string) {
   const live = (await M.Action.find({ automation: automationId }).lean()).map((a: any) => a.type).filter(isLive);
   if (live.length) throw new Error(`activating ${automationId} would run ${live} against real providers; set ALLOW_LIVE=1 only with test providers`);
 }
+// Write only a schedule the editor itself writes (scripts/editorSchedule.ts), so the user can open and change it.
+const assertEditorSchedule = (next: any) => {
+  if (!["cron", "period"].includes(next.type) && !next.cron && !next.cronType) return;
+  const error = editorScheduleError(next.cronType, next.cron);
+  if (error) throw new Error(`${error}; see references/lib.md «Schedules»`);
+};
 const assertNotBoth = (p: any) => {
   if ("conditions" in p && "fields" in p) throw new Error("Automation pre-save rebuilds `fields` from `conditions`: set them in separate calls");
 };
@@ -434,6 +443,7 @@ export async function createAutomation(spec: any, opts?: Opts) {
   const { name, category, active, ...rest } = spec;
   if (active) throw new Error("create inactive, then activate with updateAutomation");
   assertNotBoth(rest);
+  assertEditorSchedule(rest);
   const p = enc(rest);
   return change("automation.create", BASE, {}, enc(spec), async () => {
     const id = String((await call("cautomation", { base: BASE, name, ...(category ? { category } : {}) }))._id);
@@ -444,6 +454,7 @@ export async function createAutomation(spec: any, opts?: Opts) {
 export async function updateAutomation(id: string, patch: any, opts?: Opts) {
   const before = await own(M.Automation, id, "automation");
   assertNotBoth(patch);
+  if (["type", "cron", "cronType"].some((k) => k in patch)) assertEditorSchedule({ ...before, ...patch });
   if (patch.active === true && !before.active) await assertCanActivate(id);
   const p = enc(patch);
   return change("automation", id, before, p, async () => {
