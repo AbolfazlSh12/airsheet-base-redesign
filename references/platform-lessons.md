@@ -463,6 +463,38 @@ before quoting them to anyone.
 - **Cascading link pickers**: Gallery picker view filter `{"operator":"has any of","operand":"{<form table>.<link field>}"}`
   + RECORD `immutable:{field:[is empty on the parent field]}` locks the child picker until the parent is chosen.
 
+## Lessons from the PM evaluation build (2026-10-18, main bb9d9023)
+
+- **Formula products are rounded to the least precise operand** (Splunk eval significant figures): `0.5 * 0.4306` stored
+  `0.2`. Wrap every multiplication in `exact(…)`; divisions kept full precision. Check one computed value against the
+  source spreadsheet before importing everything.
+- **AVERAGE rollups come back rounded to two decimals** (`round(x*100)/100` in `join.ts`); fine for percentages,
+  wrong for anything needing more precision.
+- **Lookups of lookups and of formulas work** across three hops (settings → program → month → activity, 2,447 rows) and
+  recompute when the root changes; a direct link is needed only where a rollup must join (rollups need the link on the
+  child).
+- **«has my mobile» and record roles go on a plain-string formula, never on a lookup**: add `mvindex(<lookup>,0) . ""`
+  copies («اسکوپ …») for every scope; prove each portal view with a count per fake mobile + anonymous (rewrite
+  «has my mobile» to «contains <mobile>» when the mobiles have no accounts).
+- **One user side per portal role**: a side takes one user role, and only side membership limits which pages and views
+  a portal user reaches; menu filters on one shared side are UI only.
+- **A button field opens a confirmation popup** in the record dialog; UI tests must click the confirm button too.
+- **`uside` has no default-page argument**; a side opens its first page, and `cside` always creates one empty page —
+  reuse it as the first page instead of leaving it (deleting needs the user's OK).
+- **`bulkUpsert` (urecords) is not a partial update**: use `updateRecord` to change a few fields of existing rows.
+- **Recurring activities share titles across months**: select rows by status or id, never by title prefix.
+- **`RecordRole.filters` is stored but not enforced**: role matching (`search.ts`) only checks that the role field
+  contains the user's mobile. To make rows read-only by state (closed period, final status), point the role at a
+  formula that returns the scope only when editable and "" otherwise.
+- **Formula queries fill empty numbers with 0** (`fillnull` in the formula effect): `isnotnull(<number field>)` is true
+  for an empty field and «empty» equals «0». Derive "not yet evaluated" from a status/select field instead.
+- **REST `/v0` list paging**: `offset` is a page index, `pageSize` ≤ 100. POST creates go through the full write path
+  (about 1.5 s per row with a uniqueness constraint); a 500-row POST outlived a 2-minute client timeout and still
+  completed server-side, so a retry re-posted duplicates (rejected by the constraint). Use batches of ~50, long
+  timeouts, and re-read before re-posting. The backend serves REST at `/v0`; production nginx adds `/api`.
+- **Periodic snapshots belong in rows keyed by period**: computations that read one global "current period" setting
+  rewrite history when it moves. Copy what the archive depends on (period month, weights) into the period row.
+
 ## Lessons from the «اداره امنیت» visual redesign (2026-10-22, base 6874edc7…, 21 sides)
 
 - **The customer's review points became design-guide rules 12, 26, 31–34** (forms behind «جدید», visible per-side
