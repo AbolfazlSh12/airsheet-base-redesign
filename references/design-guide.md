@@ -14,7 +14,7 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 
 ---
 
-## 0. The 30 rules. Read these even if you read nothing else
+## 0. The 34 rules. Read these even if you read nothing else
 
 1. **Blocks sit 4 px apart.** The block list is a `flex-wrap gap-1` (`NotionViewer.vue`, draggable class `tw-gap-1`), so vertical rhythm has to come from you. Use SECTION `padding`, TitleDivider (it has `my-4`), or inline `margin` inside TEXT HTML.
 2. **Style everything in TEXT HTML inline**:
@@ -39,6 +39,15 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
     - `"denied"` hides the button.
     - `newForm:true` with a `newFormPage` makes it open a form.
     - Without either, the «جدید» button calls `create({}, true)` (`ViewGallery.vue:2719`), which **creates an empty record** straight away.
+    - So **every list that keeps «جدید» gets a form** (`newable:"access"` + `newForm:true` + `newFormPage:{id, type:"VIEW",
+      details:{value:<Form view id>}}`, the editor's own shape, `ViewSettingMenu.vue selectForm`), set by
+      `scripts/new-forms.ts` as the last step. A table without a usable Form view first gets «فرم ثبت <table>» (v1 layout
+      `[{inputs:[{id,name,description,required,invisible:false,conditions:[]}], doneMessage, button:{text,color}, splitFields:[]}]`;
+      required = primary field + the fields the lists group/filter/date on + the parent link, never a collaborator field;
+      no formula/lookup/rollup inputs; a link input's picker must be a Gallery).
+    - Never default a rebuilt block to `"denied"` to dodge this: it silently removes a button users had.
+    - **Never place a Form view on a page next to its list** (rejected by the customer as cluttered): the «جدید» dialog is
+      the form. Forms stay on their own page only when the page *is* the form (a portal request page).
 13. **Images: know what each block accepts.**
     - GALLERYMENU / MENU / STATS / header logo / IMAGE / FileBlock take **uploaded storage keys** (`<baseId>/<uuid>/<file>`). The component prepends `S3 + /cloud-uploads/`, so an external URL breaks.
     - SECTION `backgroundImage`, page `background` and page `cover` take any URL, including site paths like `/img/...`.
@@ -55,10 +64,14 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 23. **Page `name` (`content.name`) is printed as a 1.5 rem bold title under the cover.** Leave it `""` when the page starts with a hero. An empty name still leaves a ~24 px strip.
 24. **Don't use `<style>`, `<script>` or `on*=` attributes in TEXT.** HTML is injected with raw `v-html`, with no sanitizer. A `<style>` leaks to the whole app, and `on*` handlers execute.
 25. **Kanban and card titles truncate at 140 px** (`ViewKanbanCard.vue`). Make the first visible field a short one.
-26. **Every page and every template has a background.** Set `background` on each page document and template layout; a bare
-    white page reads as unfinished. Use one look per side: a transparent SVG `data:image/svg+xml,…` (soft shapes in the brand
-    hue, low opacity, so dark mode still works) or a theme token such as `hsl(var(--b2))` (§3). Content cards stay on
-    `base-100`, so they separate from the background.
+26. **Every page and every template has a background, visible and different per side.** Set `background` on each page
+    document and template layout; a bare white page reads as unfinished. Use `scripts/visual-kit.ts` `pageBg` (via
+    `pageDoc`): a transparent SVG data URI = a diagonal wash in the side's tone + a **pattern of its own per side** (circuit,
+    hex, waves, dots, grid, diagonal, plus, chevron, triangles, squares, rings, nodes, stars) + two soft corner circles.
+    Calibrated with a customer over three rounds: a wash alone (stop opacities 0.10 / 0.02 / 0.06) was "barely visible,
+    all pages alike"; patterns at stroke 0.13–0.20, dots 0.3–0.5 were "too busy"; accepted: wash 0.16 / 0.04 / 0.10,
+    circles 0.065 / 0.08, patterns at 0.55 of those (`PATTERN_STRENGTH`, strokes ≈ 0.07–0.11, dots ≈ 0.11–0.27). Change
+    only that knob when a customer asks for "more" or "less". Content cards stay on `base-100`, so they separate.
 27. **Balance density: no large empty areas, no clutter.** The first screen of a page shows its purpose: a short hero
     (≤ ~200 px), the KPIs and the main action or list. Put related short blocks side by side (COLUMNS2/3: a form next to its
     help, two short lists next to each other); show figures as STATS tiles, not as a vertical stack of RECORD values; no
@@ -88,6 +101,23 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 30. **Galleries get covers.** Set `brandField` on every Gallery whose records have an image or can get one through a lookup
     (an item photo on a request line, a building photo on a room), and seed an image on every row (§11 #5). If the table has
     no natural image, choose a non-gallery type (rule 29) rather than leave grey boxes.
+
+31. **Links to the base's own pages are page links, never URLs.** Side `header.menuItems`, MENU, GALLERYMENU and
+    TitleDivider buttons use `linktype:"page"` + `side` + `path` (+ `link:""`/`url:""`). A `url` of `/b/<base>/<side>/<page>`
+    or a full app URL breaks on another host or custom domain and is flagged by the customer as wrong.
+32. **Every side has a finished header.** Persian display `name`, a `logo`/`darkLogo` whose file exists on *this* server
+    (a base restored from a backup keeps side-logo keys whose files are gone; the base logo usually survives), and a Lucide
+    `icon` + `iconColor` (`var(--<hue>3)`, varied and meaningful) on **every** menu item and child — a sidebar of grey
+    house icons was the first complaint. A side with pages but no menu gets one (each page of the side, page links). A
+    landing/hub side (visitor menu) shows MENU `type3` icon cards (`visual-kit.ts navCards`), never a column of plain
+    coloured buttons.
+33. **One page look, from the hero down** (the reference the customer accepted, `visual-kit.ts`): dark gradient hero
+    SECTION (eyebrow chip «side · area», title ≤ 5 words, optional one-line sub, round icon badge, `content.name:""`),
+    then short `info` cards side by side, then icon-square headings over white cards holding the lists and dashboards.
+    One tone and one background pattern per side.
+34. **No long text, little scrolling.** A paragraph becomes ≤ 3 bullet lines of ≤ 10 words in an `info` card, or is
+    dropped if it explains the obvious; no emoji headings, no DIVIDER/empty-TEXT spacers. Group what a page offers into
+    TABS / COLUMNS / cards so the first screen shows the page's purpose; a page should not need a long scroll.
 
 ---
 
@@ -642,7 +672,10 @@ View-level display settings are covered in §6.
 ## 5. TEXT HTML: what is safe and what looks good
 
 ### 5.1 Sanitizer
-There isn't one. `TextBlock.vue:8` is `v-html="value"`. Everything is rendered, including tags, classes, inline `style`, `<img>`, `<a>`, `<svg>`, `<table>`, and CSS grid / flex.
+**Since cloud-front 5b1968b5e (2026-10-15) there is one**: inline styles are whitelisted and `background`, gap, flex
+alignment, line-height, position, shadows… are dropped silently (platform-lessons «Page HTML sanitiser»). What follows
+in §5.1–5.2 about "everything renders" describes older builds; put gradients and patterns in SVG data URIs (SECTION
+`backgroundImage`, page `background`, `<img src="data:…">`) as `scripts/visual-kit.ts` does. Old notes: `TextBlock.vue:8` was `v-html="value"`, rendering tags, classes, inline `style`, `<img>`, `<a>`, `<svg>`, `<table>`, and CSS grid / flex.
 - `<script>` does not execute, because it is set through innerHTML.
 - `on*` attributes **do** execute.
 - `<style>` elements apply globally.
@@ -692,6 +725,9 @@ All of them get `line-height:normal`, negative letter-spacing and margin 0.
 - So heading size is load-order-dependent. **Always set `font-size`, `font-weight`, `line-height` and `margin` inline**, or use a `<div>` with inline styles.
 
 ### 5.4 Images, icons, links
+- **Inline icons as `<img>` need `display:inline-block;vertical-align:middle`**: Tailwind preflight sets `img{display:block}`,
+  so an icon before a heading otherwise lands on its own line. In an SVG data URI built from Lucide paths, wrap the paths
+  in `<g fill="none" stroke="…">`: without `fill="none"` the paths fill black.
 - **`<img src>`**: prefer site-relative public assets (`/img/page%20bg/background3.jpg`, the "page bg" set `background1..11.jpg`), or uploaded files by their full URL. Full URLs depend on the environment (§11.16). Always set `width`/`height` or `max-width:100%`.
 - **Icons in HTML**:
   - You can't use Vue components.
@@ -1126,6 +1162,9 @@ A TEXT header, then TABS by topic. Each tab holds ExpandItem blocks (a question 
 
 ## 12. Pre-publish checklist (per page or template)
 
+- [ ] `npx tsx build/page-lint.ts` exits 0: every list with «جدید» has a form, no Form block beside a list, no URL
+      links into the base, every page has a background, every side a name/logo/coloured menu, nothing the editor
+      autosaves on open (rules 12, 26, 31, 32).
 - [ ] `background` set (rule 26); no large empty area on the first screen, nothing crowded (rule 27).
 - [ ] Every view type, gallery type and block chosen for its use case (rule 29); galleries have covers (rule 30).
 - [ ] Every list on the page has mock rows that pass its filter for each demo account (demo-data.md «Seed per placed view»).
@@ -1139,7 +1178,7 @@ A TEXT header, then TABS by topic. Each tab holds ExpandItem blocks (a question 
   - [ ] has a heading above it
   - [ ] has `displayListName:false`
   - [ ] has `viewToolbar` set
-  - [ ] has `newable` set (plus `newForm` if allowed)
+  - [ ] has `newable` set, and `newForm` + `newFormPage` whenever it is not `"denied"` (rule 12)
   - [ ] names an explicit `expandTemplate` id
 - [ ] Every template used on a user or visitor side has that side in `sides`; the page `status` is not draft.
 - [ ] No `filterType` on non-record pages; no BUTTON, RECORD or PROGRESS outside templates.

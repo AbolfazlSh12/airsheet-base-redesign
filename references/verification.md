@@ -100,6 +100,11 @@ five dashboard tabs were empty for both portal users — readable mock ids broke
 - For an automation scenario check with `filter.match`, give every constructed record its `table` (and `base`): the
   evaluator loads field types from `record.table`, and without it no condition ever matches.
 
+- `npx tsx build/page-lint.ts` (pages and side headers, rules 12/26/31/32 of the design guide) must exit 0. Then open
+  each page once as the owner and re-run every page step with `DRY=1`: any diff is an editor autosave
+  («در حال ذخیره‌سازی / ذخیره شد» on every open) to write into the step; `build/quiet-layouts.ts` writes the known mount
+  defaults into pages and templates.
+
 ## 6. Change safety
 
 - `DRY=1` diff read by the agent before every real run; `changes.log` holds `{kind,id,diff:{from,to}}` so any line can

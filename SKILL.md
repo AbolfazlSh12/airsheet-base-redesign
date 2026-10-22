@@ -125,6 +125,8 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | `workflows/1-understand.js`, `2-coverage.js`, `3-remediation.js`, `4-feature-map.js`, `5-explain-base.js` | Workflow-tool scripts: catalogue, coverage, gap plan, feature ↔ requirement map with skeptics, plain-Persian explanation of every page/template/table/automation |
 | `build-report.py` + `report-template.html` | a self-contained RTL HTML report (design or comparison) from a JSON |
 | `base-graph.py` | the planned base as an interactive graph (roles → portals → pages → tables, table links) + access matrix, from `design/base-graph.json`; flags unreachable tables, pages on no side, pages that list a table their audience cannot view |
+| `visual-kit.ts` | page building blocks in the look customers accepted: `pageDoc` (per-side background: wash + pattern, `PATTERN_STRENGTH`), `hero`, `info`, `heading`, `card`, `cols2`, `tabs`, `view`, `navCards`, `sideHeader`, `assertKept` (a rebuilt page keeps every view/embed/link) — design-guide rules 26, 31–34 |
+| `new-forms.ts`, `page-lint.ts`, `quiet-layouts.ts` | post-process run last: every list with «جدید» opens its table's form; read-only lint of pages and side headers (exit 1); writes the editor's mount defaults so opening a page or template as the owner does not autosave |
 | `make-brand.py`, `attach-images.ts`, `init-project.cjs`, `preflight.sh` | placeholder brand set (mark + wordmark, shaped Persian text); photos onto records by name; rebuild `project.json` from a dump; hour-zero environment check |
 
 ## Supporting playbooks

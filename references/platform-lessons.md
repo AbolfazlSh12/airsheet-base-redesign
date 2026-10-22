@@ -462,3 +462,18 @@ before quoting them to anyone.
   submits also consume autonumbers.
 - **Cascading link pickers**: Gallery picker view filter `{"operator":"has any of","operand":"{<form table>.<link field>}"}`
   + RECORD `immutable:{field:[is empty on the parent field]}` locks the child picker until the parent is chosen.
+
+## Lessons from the «اداره امنیت» visual redesign (2026-10-22, base 6874edc7…, 21 sides)
+
+- **The customer's review points became design-guide rules 12, 26, 31–34** (forms behind «جدید», visible per-side
+  backgrounds, page links, finished side headers, the hero/cards look, no long text). `scripts/visual-kit.ts` builds
+  that look and `scripts/page-lint.ts` checks it; run the lint before showing anything.
+- **Post-processes run last, every time.** A page step writes the whole `content`, so re-running it drops what
+  `new-forms.ts` and `quiet-layouts.ts` added; after any page-step re-run, run them again. A page step's `DRY=1` then
+  differs only by `newForm`/`newFormPage` (expected). A keep-check over the old content must skip `newFormPage`, or it
+  counts the chosen form as a page block and stops the rebuild halfway.
+- **STATS tiles showed 0** on the shared test server: the `stats` query returned null for every STATS block, the base's
+  own included. Check one original block before debugging a new one.
+- **View `brandField: ""` is rejected** by the DTO; an empty cover is `null` (what the UI writes).
+- **Field defaults are applied by the frontend only**, and buttons cannot run `updateRecord`: rows a script seeds get
+  no default values, so seed every field a list filters or groups on.
