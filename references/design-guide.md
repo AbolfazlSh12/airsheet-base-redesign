@@ -197,7 +197,7 @@ BUTTON, RECORD, FIELD, PROGRESS and GROUPSECTION need `record.table`, so use the
 **Customer brand**: sample the customer's own logo (preferably the vector in their documents, not a web thumbnail) and pick
 the built-in palette whose primary hue is closest; it recolours every `var(--blueN)` and `hsl(var(--p))` in one step.
 - Example (first project): the logo measured `#0095DA`, so `alternative2` (sky, hue 199°) was chosen.
-- In hand-written HTML heroes use two fixed brand colours, e.g. `linear-gradient(135deg,<navy>,<brand>)`, with fixed white text, so the hero reads the same in both themes.
+- Hand-written HTML can only set flat colours (`background-color`; page HTML is sanitised — platform-lessons «Page HTML sanitiser»). A brand hero is a TEXT with a fixed `background-color:<navy>` and white text, a photo hero is a SECTION with `backgroundImage` (asset-pipeline A5); both read the same in both themes.
 - Logo files must be uploaded (`L.uploadFile`) to become storage keys.
 
 ### 2.3 Dark mode
@@ -587,7 +587,7 @@ View-level display settings are covered in §6.
 - **Shape**: `details = {title, subtitle, btnLabel, type:"image"|"video", images:[<key>], video, dir, linktype:"page"|"url", side, path, url}`.
 - **Render**: on lg screens, the image half (a swiper, 270 px, **object-fit contain**, default `/icons/earth.webp`) sits next to a text half with 48 px padding.
 - The title uses `tw-text-gray-800`, which **is not compiled**, so the title just inherits. The button always renders, even when `btnLabel` is empty.
-- **It looks dated. Use a TEXT hero instead (§10.1).**
+- **It looks dated. Use a flat TEXT hero (§10.1) or a SECTION photo hero (asset-pipeline A5) instead.**
 
 ### 4.21 IMAGE: `blocks/ImageBlock.vue`
 - **Shape**: `details.value = {image:<storage key>, caption, width:300, mobileMax:320, direction:""|"rtl"|"ltr"}`.
@@ -705,7 +705,7 @@ All of them get `line-height:normal`, negative letter-spacing and margin 0.
 ### 5.5 Dark-mode-safe HTML snippets
 Surface card, adapts to theme:
 ```html
-<div style="background:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px">
+<div style="background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px">
   <div style="font-size:16px;font-weight:700;line-height:1.6;margin:0 0 6px">عنوان کارت</div>
   <div style="font-size:13px;line-height:1.9;color:hsl(var(--nc))">توضیح کوتاه دو خطی.</div>
 </div>
@@ -713,24 +713,23 @@ Surface card, adapts to theme:
 
 Tinted info card (tokens):
 ```html
-<div style="background:var(--blue);color:var(--blue4);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.9">…</div>
+<div style="background-color:var(--blue);color:var(--blue4);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.9">…</div>
 ```
 
-Brand hero (fixed colours, readable in both themes):
+Brand hero (flat fixed colour — gradients, `url()`, shadows and line-height are sanitised away since 2026-10-15; a photo hero is a SECTION, asset-pipeline A5):
 ```html
-<div style="background:linear-gradient(135deg,#124f7d 0%,#1d6596 45%,#2195d2 100%);color:#ffffff;border-radius:20px;padding:36px 32px;overflow:hidden">
+<div style="background-color:#124f7d;color:#ffffff;border-radius:20px;padding:36px 32px">
   <div style="font-size:13px;font-weight:600;opacity:.85;margin:0 0 8px;letter-spacing:0">«نام درگاه» · «نام سازمان»</div>
   <div style="font-size:30px;font-weight:800;line-height:1.45;margin:0 0 10px">سلام، به پیشخوان خوش آمدید</div>
   <div style="font-size:15px;line-height:2;max-width:720px;opacity:.92">وضعیت پرونده، معاملات و درخواست‌های شما در یک نگاه.</div>
 </div>
 ```
 
-Responsive card grid (auto-wraps to one column on phones):
+Card grid: `display:grid`, `grid-template-columns` and `gap` are sanitised away (the cards stack). Use a COLUMNS3 / COLUMNS4 block
+(`column1..4 = {label, name, splitter, content:{name, blocks:[TEXT card]}}`, nested `splitter` 33/50 or 25/33/50; columns stack under `md`)
+with one card per column:
 ```html
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-  <div style="background:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:18px">…</div>
-  …
-</div>
+<div style="background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:18px">…</div>
 ```
 
 ---
@@ -767,6 +766,12 @@ Storage (`cloud-back/src/modules/database/models/View.ts`, and `cloud-back/src/m
 | `menu` | Small 80 px tiles | Icon-like pickers |
 | `compare` | Side-by-side columns | Rarely |
 | `search` | Search-first: shows nothing until the user types (`minCharsSearch`) | Lookups |
+
+Featured card sizing (from `ViewGallery.vue getCardMinWidth` / `getImageHeightPx`): card min width xs 150 · sm 200 · md 250 ·
+lg 320 · xl 400 px; image square xs 80 · sm 120 · md 160 · lg 220 · xl 300 px, placed beside the text. The text column is
+the card width minus the image, so a title or price breaks mid-word unless the pair is one of: **lg + md** (catalogue
+cards with photo), **xl + lg** (showcase), **md + sm** (short labels only). At 6xl page width lg gives 3 cards per row,
+md 4. Labels in GALLERYMENU and Kanban titles truncate at ~140 px: keep tile labels ≤ 14 characters or accept the ellipsis.
 
 Other gallery `layout[0]` keys:
 - `imageFit`: `cover` or `contain`.
@@ -952,7 +957,7 @@ Placeholders: `<…>`. Read side and page ids with `L.listSides()` / `L.listPage
 ### 10.1 Portal home: hero, KPI strip, quick actions, two lists (collaborator dashboard)
 ```json
 {"name":"","maxw":"tw-max-w-6xl","align":{"value":"center","label":"وسط"},"background":{"type":"color","value":"hsl(var(--b2))"},"blocks":[
- {"id":"h","type":"TEXT","details":{"value":"<div style=\"background:linear-gradient(135deg,#124f7d 0%,#1d6596 45%,#2195d2 100%);color:#fff;border-radius:20px;padding:32px 28px;margin:8px 0 12px\"><div style=\"font-size:13px;font-weight:600;opacity:.85;margin:0 0 6px\">میز کار زنجیره تأمین</div><div style=\"font-size:28px;font-weight:800;line-height:1.45;margin:0 0 8px\">پیشخوان</div><div style=\"font-size:14px;line-height:2;opacity:.92;max-width:680px\">روی هر عدد بزنید تا فهرست همان موارد باز شود.</div></div>"}},
+ {"id":"h","type":"TEXT","details":{"value":"<div style=\"background-color:#124f7d;color:#fff;border-radius:20px;padding:32px 28px;margin:8px 0 12px\"><div style=\"font-size:13px;font-weight:600;opacity:.85;margin:0 0 6px\">میز کار زنجیره تأمین</div><div style=\"font-size:28px;font-weight:800;line-height:1.45;margin:0 0 8px\">پیشخوان</div><div style=\"font-size:14px;line-height:2;opacity:.92;max-width:680px\">روی هر عدد بزنید تا فهرست همان موارد باز شود.</div></div>"}},
  {"id":"k","type":"STATS","details":{"value":[
    {"id":"k1","label":"در انتظار احراز هویت","type":"dynamic","table":"<suppliers>","field":"<primary>","aggregate":"count","icon":"UserCheck","color":"var(--yellow)","drilldownView":"<view>","filter":[{"index":0,"filter":{"andor":"and","field":"<status>","operator":"is","operand":"در انتظار بررسی","relativeDate":null,"relativeTime":null}}]},
    {"id":"k2","label":"معاملات در فروش اسناد","type":"dynamic","table":"<deals>","field":"<primary>","aggregate":"count","icon":"Gavel","color":"var(--blue)","filter":[]},
@@ -1050,12 +1055,12 @@ There is no count-based conditional in pages, and Gallery `cards`/`featured` ren
 ### 10.6 Public landing (visitor side)
 ```json
 {"name":"","maxw":"tw-max-w-6xl","cover":"","blocks":[
- {"id":"hero","type":"TEXT","details":{"value":"<div style=\"background:linear-gradient(135deg,#124f7d,#2195d2);color:#fff;border-radius:24px;padding:48px 36px;margin:12px 0\"><div style=\"display:flex;align-items:center;gap:12px;margin:0 0 18px\"><img src=\"<site-relative logo path>\" alt=\"\" style=\"height:40px;width:auto;background:#fff;border-radius:10px;padding:4px\"><span style=\"font-size:14px;font-weight:600;opacity:.9\">«نام سازمان»</span></div><div style=\"font-size:34px;font-weight:800;line-height:1.4;margin:0 0 12px\">سامانه ارتباط با تأمین‌کنندگان</div><div style=\"font-size:16px;line-height:2;max-width:640px;opacity:.92\">ثبت‌نام، شرکت در معاملات، قراردادها و درخواست‌ها — یکجا و آنلاین.</div></div>"}},
+ {"id":"hero","type":"TEXT","details":{"value":"<div style=\"background-color:#124f7d;color:#fff;border-radius:24px;padding:48px 36px;margin:12px 0\"><div style=\"display:flex;align-items:center;gap:12px;margin:0 0 18px\"><img src=\"<site-relative logo path>\" alt=\"\" style=\"height:40px;width:auto;background-color:#fff;border-radius:10px;padding:4px\"><span style=\"font-size:14px;font-weight:600;opacity:.9\">«نام سازمان»</span></div><div style=\"font-size:34px;font-weight:800;line-height:1.4;margin:0 0 12px\">سامانه ارتباط با تأمین‌کنندگان</div><div style=\"font-size:16px;line-height:2;max-width:640px;opacity:.92\">ثبت‌نام، شرکت در معاملات، قراردادها و درخواست‌ها — یکجا و آنلاین.</div></div>"}},
  {"id":"cta","type":"GALLERYMENU","details":{"displayMode":"icon","cardSize":"lg","fit":true,"value":[
    {"id":"g1","label":"ثبت‌نام تأمین‌کننده","lucidIcon":"UserPlus","iconBgColor":"var(--blue)","iconColor":"var(--blue4)","color":"hsl(var(--b1))","borderEnabled":true,"borderWidth":1,"borderColor":"var(--gray)","shadowEnabled":true,"shadowIntensity":16,"align":"center","linktype":"page","side":"<sideId>","path":"<registrationPage>","filter":[],"value":""},
    {"id":"g2","label":"فرصت‌های معاملاتی","lucidIcon":"Gavel","iconBgColor":"var(--teal)","iconColor":"var(--teal4)","color":"hsl(var(--b1))","borderEnabled":true,"borderWidth":1,"borderColor":"var(--gray)","shadowEnabled":true,"shadowIntensity":16,"align":"center","linktype":"page","side":"<sideId>","path":"<oppsPage>","filter":[],"value":""},
    {"id":"g3","label":"راهنما","lucidIcon":"LifeBuoy","iconBgColor":"var(--yellow)","iconColor":"var(--yellow4)","color":"hsl(var(--b1))","borderEnabled":true,"borderWidth":1,"borderColor":"var(--gray)","shadowEnabled":true,"shadowIntensity":16,"align":"center","linktype":"page","side":"<sideId>","path":"<helpPage>","filter":[],"value":""}]}},
- {"id":"feat","type":"TEXT","details":{"value":"<div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0\"><div style=\"background:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">شفافیت معاملات</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">فراخوان‌ها، مهلت‌ها و نتایج در دسترس همه.</div></div><div style=\"background:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">پرونده‌ی یکپارچه</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">اطلاعات شرکت، گواهی‌ها و سوابق در یک پرونده.</div></div><div style=\"background:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">پیگیری آنلاین</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">وضعیت درخواست‌ها و پرداخت‌ها را لحظه‌ای ببینید.</div></div></div>"}},
+ {"id":"feat","type":"TEXT","details":{"value":"<div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0\"><div style=\"background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">شفافیت معاملات</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">فراخوان‌ها، مهلت‌ها و نتایج در دسترس همه.</div></div><div style=\"background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">پرونده‌ی یکپارچه</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">اطلاعات شرکت، گواهی‌ها و سوابق در یک پرونده.</div></div><div style=\"background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">پیگیری آنلاین</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">وضعیت درخواست‌ها و پرداخت‌ها را لحظه‌ای ببینید.</div></div></div>"}},
  {"id":"tdn","type":"TitleDivider","details":{"title":"آخرین اخبار","showIndicator":true,"indicatorColor":"var(--blue3)","showLine":true,"lineColor":"var(--gray2)","titleColor":"","showButton":true,"buttonText":"همه‌ی اخبار","buttonColor":"var(--blue)","buttonTextColor":"var(--blue4)","linktype":"page","side":"<sideId>","path":"<newsPage>","openInNewTab":false}},
  {"id":"news","type":"VIEW","details":{"value":{"value":"<newsGallery layout type cardsHorizontal, brandField=image>","expandTemplate":"<newsTpl>","displayListName":false,"viewToolbar":"invisible","viewFilterbar":"invisible","newable":"denied"}}}
 ]}
@@ -1096,7 +1101,7 @@ A TEXT header, then TABS by topic. Each tab holds ExpandItem blocks (a question 
 | 13 | Form v2 says «ارسال» on page 1 and «بعدی» on the last page | Inverted ternary (`ViewFormNotionPage.vue:120`) | Set `buttonLabel` on every page |
 | 14 | Empty records created by «جدید» | `createOrDialog` → `create({}, true)` without `newForm` (`ViewGallery.vue:2719`) | `newForm` + `newFormPage`, or `newable:"denied"` |
 | 15 | Broken image in IMAGE, MENU, GALLERYMENU, STATS or header logo | Components prepend `S3/cloud-uploads/` | Use uploaded keys only |
-| 16 | Hero or background image missing on another server | SECTION `backgroundImage` stores a full `https://<s3-host>/cloud-uploads/...` URL (`SectionBlock.vue` upload watcher) | Re-point per environment, or use site `/img/...` assets or TEXT gradients |
+| 16 | Hero or background image missing on another server | SECTION `backgroundImage` stores a full `https://<s3-host>/cloud-uploads/...` URL (`SectionBlock.vue` upload watcher) | Re-point per environment, or use site `/img/...` assets (TEXT gradients and `url()` are sanitised away) |
 | 17 | Footer transparent or absent | Default bg `var(--base-200)` undefined; SidebarLayout has no footer (`SideFooter.vue:843`, `SidebarLayout.vue`) | Set `hsl(var(--b2))`; footer on website sides only |
 | 18 | Section condition ignored on a normal page | `filter()` returns true when there is no `record.table`, except `[role]` (`utils/filter.js:84`) | Record-conditional content only in templates |
 | 19 | KPI on the supplier portal shows global counts; drill-down does nothing | `useStats` sends `type:"shared"`; `sharedStats` does no ACL; drilldown is collaborator-only (`StatsBlock.vue expandView`) | Filter STATS by user-relative operators, or use rollups on the supplier record |

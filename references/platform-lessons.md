@@ -53,6 +53,65 @@ before quoting them to anyone.
 - A view shown to both staff and portal users cannot carry `has my mobile` (staff searches send the view's own filters).
   Make a copy «… (پرتال)» plus a template limited to the portal side; check with `scripts/portal-invariant.ts`.
 - Self-registration depends on the **server-wide** `auth.register.enable`, not on `base.preferences.signup`.
+- **A user side without `userrole.accreditForm` shows «عدم دسترسی» to every newly registered user** (AppPage.vue: the
+  side query returns `accreditForm` for an unaccredited user and the portal gate renders that Form view; otherwise
+  `side.accessDenied`). Give each user role a short registration form on its own table (name, the `userProperty`
+  field, one or two extras) — the platform does **not** fill the mobile in, so the form text must say "the number you
+  signed in with". `redirect:true, redirectURL:"/b/<base>/<side>/<page>", delayedRedirect:true` (relative paths pass
+  `safeUrl`) sends them into the portal after submit. The site header's `dynamicButton.hideAfterLogin` hides the only
+  link to the portal after login — keep it visible and name it after the portal. Test the whole journey with a fresh
+  mobile number before a demo (demo-readiness).
+- **Do not put a link `create` picker for the identity table in a public form.** The «جدید» dialog on a visitor side
+  answers 401 («ابتدا وارد حساب کاربری شوید») to a signed-in visitor and duplicates the mobile for a returning one.
+  Ask for the identifier as a plain field on the request row (`type:"mobile"`) and let the row's identity formula fall
+  back to it: `coalesce(mvindex($<lookup of linked mobile>$,0), $<typed mobile>$) . ""` — the mobile-based record role
+  then shows the request in the right portal before staff link the customer. Show the typed field beside the link
+  field in staff queues and the staff template so linking is one click.
+- **Identity chains of child tables must follow the same fallback.** Items, cases and transactions usually derive
+  «موبایل مسافر (متن)» from `lookup(order.customer mobile)`; once an order can carry a typed mobile instead of a linked
+  customer, give each child a lookup of the typed field through the order link and make the child formula
+  `coalesce(mvindex($cust$,0), mvindex($typed$,0)) . ""` — otherwise the portal user sees the order but never its
+  items, cases or payments. Tables that chain through a case follow automatically. Audit: list every VIEW block in
+  portal pages/templates with its table, filters and record-role field, then trace each role field's lookup chain.
+- **An empty tab is not always a bug.** A fresh request has no items until staff run the inquiry; put a one-line TEXT
+  above such lists saying when rows appear, and show what the user asked for (a «درخواست شما» card) so the record never
+  looks blank.
+- **Codes and vouchers: a typed text field, never a link picker on a public form.** A link picker (even one bound to a
+  "active only" `linkView`) lists every code to anyone who opens the form. And an automation cannot turn typed text into
+  a link: `modifyRecord` resolves only `{record:id}` / the source primary field into `[{_id, primaryFieldValue}]` and
+  stores any other string as-is in a `records` field. So: text field on the request row, shown next to the link field in
+  the staff template (staff links it where they already set the final percentages), the result (discount amount) shown
+  on the customer's record. Say in the hand-over that auto-linking needs a platform feature.
+- **A form's thank-you page keeps only TEXT across an editor round-trip.** A MENU block written into
+  `layout[0].thankYouPage.notion.blocks` by script disappeared within the hour once the owner opened the form in the
+  editor (the thank-you builder re-saves its own block set). Put the call-to-action in the TEXT block as a styled
+  `<a href="/b/<base>/<side>/<page>">` (inline-block, background-color, padding, border-radius — all allowed), and
+  re-check script-written view layouts after the customer has touched them in the UI.
+- **"New" on a list instead of a separate form page.** A VIEW block grows the platform's new-record button with
+  `newable:"all"`, `newForm:true`, `buttenText`, `buttonColor`, `newFormPage:{id:"<blockId>-nf", type:"VIEW",
+  details:{value:<form view id>}}` — and `lockSettings:false`, because ViewGallery hides the button for non-owners while
+  settings are locked (`!pageContext.lockSettings || iowner`); staff lists can use `newable:"access"` (table icanadd).
+  The dialog form has no record context, so a portal user's new row is not auto-linked: ask the identity (mobile) in
+  the form and rely on the text-formula fallback. Retire a page by `setPagePublished(id,false)` + removing it from
+  `pagesOrder` and `header.menuItems`; never delete it.
+- **Script-built layouts must carry the blocks' mount-time defaults, or the owner sees «ذخیره شد» on every open.**
+  For an owner, `composables/record.js` deep-watches the template layout and calls `uexpandtemplate` on any mutation
+  (pages: `composables/side.js` → `upage`). Blocks that mutate themselves on mount: TitleDividerBlock `initDefaults()`
+  (title, showLine, showButton, buttonText «مشاهده همه», showIndicator, indicatorSizeKey md, indicatorOrient vertical,
+  linktype page, openInNewTab false, url "", side = current side, indicatorColor/buttonColor var(--blue2),
+  buttonTextColor #ffffff, lineColor var(--gray3), titleColor ""), NotionViewer `onMounted` (inserts an empty TEXT
+  into any nested content with 0 blocks: section, column, tab, PROGRESS state — a different record renders a
+  different state, so it never settles), Columns2/3/4 (splitters 50 / 33.33,50 / 25,33.33,50), ViewApp `initToolbarDefaults()` (a VIEW block with
+  `viewToolbar:"visible"` gets showSettings/showFilter/showSort/showGroup/showSearchFields/showPageSize = true; TABS
+  render one tab at a time, so every tab switch on a staff page was another save). Write every nested
+  content with at least one block and every TitleDivider with the full key set; `steps/102-quiet-templates.ts` in the
+  SafarClub workspace is the generic normaliser (run it after any scripted layout change). Proof technique: diff the
+  layout after the owner opened a record against the script's last write.
+- **Portal users cannot pick their own row in a visitor-side form.** The link picker on a visitor side returns nothing
+  for them and «جدید» duplicates the mobile. Put the request form inside the user side: a page with an `ExpandRecord`
+  (profile view, `profileCondition:"has my mobile"`) whose template holds a VIEW block with
+  `autoLinkField:<link field to the profile table>` — the created row links to the viewer's own record (this is how
+  «ارسال مدرک» / «درخواست پشتیبانی» work). Keep the visitor-side form for anonymous visitors (link `create`).
 - **Field `canedit` is not applied on create** (`record.ts` create: «TODO: check access»), so form defaults for fields
   a role may not edit still land. **On update** only `canedit` fields survive, plus the clicked button: a button's
   `doneProcess` / `signs` writes happen in the invariants after the permission filter. So a status field can be
@@ -256,6 +315,31 @@ before quoting them to anyone.
   `header.menuItems[]` gets `icon` (Lucide name) and `iconColor`; its layout also calls the owner-only `sides` query
   (harmless 403 in the console).
 
+## Page HTML sanitiser (cloud-front 5b1968b5e, 2026-10-15)
+
+- Every stored HTML value (TEXT, ALERT, generated text, long-text cells, titles) reaches the DOM only through
+  `v-safe-html` → `sanitizePageHtml` (`src/utils/pageHtml.js`, sanitize-html). Inline styles are filtered to a whitelist:
+  color, background-color, text-align, text-decoration, font-size/weight/style/family, direction, width, height,
+  max-width, max-height, aspect-ratio, margin, padding, border, border-radius, display, vertical-align. Any value with
+  `url(` or `expression(` is dropped, as are the classes fixed/absolute/sticky/fullscreen/inset/z-/top-/bottom-/left-/right-.
+- Everything else disappears silently: `background` shorthand (so gradients and photos), position, overflow, min-height,
+  line-height, opacity, gap, grid-template-*, flex-wrap, text-shadow, box-shadow. `<a href>`, `<img src>` (http/https/data)
+  and the TEXT_TAGS / SVG_TAGS lists survive. The sanitiser existed before (69952fb9e, 2026-10-04) but allowed those
+  styles, so screenshots taken before 2026-10-15 are no evidence that an HTML hero still renders — check
+  `git log -- src/utils/pageHtml.js` before trusting old captures.
+- Consequences for a build: photo hero / banner = SECTION (`backgroundImage` full URL, `padding`, `radius`, `filter: []`,
+  a TEXT child with white text) with the tint baked into the JPEG (`scripts/darken-hero.py`), asset-pipeline A5; card
+  grids = COLUMNS3/4 (`column1..4 = {label, name, splitter, content:{name, blocks}}`, nested splitter 33/50 or
+  25/33/50); flat colours via `background-color`; buttons and chips as `display:inline-block` with margins; a round
+  badge centred with padding instead of line-height. A SECTION's children render through NotionViewer inside the padded
+  box, each block with its own `px-4 py-2`.
+- The same sanitiser runs inside record templates (`ExpandTemplate.layout.blocks`, incl. blocks nested in SECTION /
+  COLUMNS / TABS), not only in `Page.content.blocks`: the SafarClub audit first scanned pages only and missed the two
+  portal-dashboard template heroes for a day. `scripts/scan-html-styles.py <all-objects.json>` lists every TEXT block
+  whose inline styles would be stripped, pages and templates alike.
+- Two adjacent STATS blocks are two independent grids (`repeat(auto-fill, minmax(180px, 1.9fr))`, or centred equal-width
+  flex rows when the page is centre-aligned), so 4 + 6 tiles render as 4 / 5 / 1 rows: put all tiles in one STATS block.
+
 ## Uploads, images and backgrounds
 
 - A script uploads with `L.uploadFile` (= `uploadBase64`, the body of the `upload` mutation). It writes to the shared S3
@@ -313,6 +397,55 @@ before quoting them to anyone.
   (notification `to` is a mobile string); `createRecord` needs `options.record.base/table` and `action.table`.
 - The dev server on :3000 can disappear mid-build (another session). For screenshots, run your own backend from the
   build worktree (`.claude/launch.json` + preview_start) at the same commit.
+
+## Lessons from the SafarClub upgrade (2026-10-14, develop a2cc1d346)
+
+- **The base's engine is a server-internal hostname and the shell proxy eats it.** `master.getEngine(baseId)` returned
+  `https://cloud-log:8089` (resolved by /etc/hosts to the tunnel) while the default engine is `127.0.0.1:8089`. With
+  `HTTPS_PROXY` exported and `NO_PROXY=localhost,127.0.0.1`, every base-scoped `runQuery` (lib `listRecords`,
+  `updateRecord`, `exportRecords`) answered **503** and `splunk-query.ts` (engine "") worked, which looks like a Splunk
+  outage. `export NO_PROXY=$NO_PROXY,cloud-log` fixes it; keep it in `build/env.sh`.
+- **`base.owner` does not exist**: the Base model has `creator` and `owners[]`. `dump-base.cjs` now prints `owner` =
+  creator so `project.json` can be rebuilt from a dump when the build folder is gone.
+- **A `count` field joins only through a real `records` field.** `rollupJoin` pointing at a text lookup («شهر») or at a
+  lookup of records («شهر (لینک)», whose values even look like links) yields 0 on every parent, and changing the join
+  does not recompute existing rows (touching the parent row did not either). The fix is a `records` field on the child
+  (backfilled from the lookup, kept by an automation for new rows) — the same "copy the lookup into a native field"
+  pattern as Calendar dates.
+- **Chrome's plain `--screenshot` flag is not a screenshot tool for these pages**: at a phone window width it rendered a
+  clipped page (right edge cut) that looked like an overflow bug, and at desktop width it produced an all-white picture of a
+  page whose DOM had 1,700 characters and 37 loaded images. The DevTools path (`Page.captureScreenshot`, with
+  `Emulation.setDeviceMetricsOverride` for phones) was right every time: `scripts/shot-chrome.sh` now always goes through
+  `probe-chrome.cjs SHOT=…`, and prints the page's text length next to each file so an empty capture is caught.
+- **Galleries and GALLERYMENU render empty in a screenshot taken before their S3 images loaded**; the same page was
+  complete at `WAIT=30000`. Re-shoot before calling a block broken.
+- **TitleDivider page buttons work**: `showButton:true, linktype:"page", side, path` renders a real button (previously
+  only the dead default button had been seen).
+- **Gallery `advancedHeader` shows search and `customSortFields` buttons**; the option chips of a singleSelect that is
+  in the view's `fields` appeared on the cards (as chips) rather than in the header on this build.
+- **The desktop app's permission classifier** refused: an ad-hoc `node -e` mongoose read of `users`/`bases`, a
+  home-wide `find` naming `.accounts.json`, and a one-off step that created a field + automation + 42 record writes.
+  It allowed the skill's scripts, demo-row updates, page/view updates and uploads. Hand refused creation steps to the
+  user (DRY-tested, documented) instead of retrying in another shape.
+
+## Lessons from the SafarClub demo round (2026-10-16)
+
+- **`base.logo` (a storage key) is shown on the base's login page** and `header.logo` / `header.darkLogo` on every side;
+  the sidebar layout and the website header print the side name next to the logo, so a wordmark there duplicates the
+  name — use the square mark, keep the wordmark for the footer brand widget (with `title:""`).
+- **Form `defaultValues` are record-shaped** (`ViewFormBody.vue` sets `setting.defaultValues = record`): a link default is
+  `[{_id, primaryFieldValue}]`, a select default the option text. Setting the «تنظیمات» link default on three forms
+  closed a critical gap («متن نسخه‌ی فعال» empty on every real case) with one `updateView` each.
+- **A `count` whose `rollupJoin` was changed does not recompute existing parents** (touching the parent did not help);
+  creating the real `records` link and writing it on every child row recomputed the counts within ~90 s.
+- **The desktop app's browser pane shares the owner's login and it expires**: a pane that showed the team dashboard
+  at 18:00 showed the login page at 20:00. Logged-in screenshots need the test accounts in `.accounts.json` (the
+  agent must never type the owner's password); otherwise template changes are verified structurally only and the
+  report says so.
+- **Headless captures taller than the page end** (window 3400 px, body 2526 px) leave an empty band below the footer;
+  crop to `document.body.scrollHeight`, and find the footer by its copyright text, not by a `<footer>` tag (the site
+  footer is a `div.tw-mt-auto`).
+- **`cfield` rejects `canview`/`canedit` and `cexpandtemplate` rejects `defaultSides`** («args not in GraphQL schema»); set them with the update mutations after creation (`lib.ts` does this since 2026-10-16). A rejected create leaves no object but does leave an `error` line in `changes.log` — say so in the report instead of hiding the line.
 
 ## Lessons from the advanced-form demo (2026-10-18, develop cdede884 / e86b81576)
 

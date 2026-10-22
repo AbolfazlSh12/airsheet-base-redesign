@@ -279,9 +279,13 @@ export async function createField(tableId: string, spec: any, opts?: Opts) {
   await own(M.Table, tableId, "table");
   const existing = await M.Field.findOne({ base: BASE, table: tableId, name: spec.name }).lean();
   if (existing) { console.log(`= field «${spec.name}» exists`); return parse(existing); }
-  const p = enc(spec);
-  return change("field.create", tableId, {}, p,
+  // cfield has no canview/canedit arguments (the GraphQL schema rejects them): permissions go through ufield afterwards.
+  const { canview, canedit, ...rest } = spec;
+  const p = enc(rest);
+  const created = await change("field.create", tableId, {}, enc(spec),
     async () => String((await call("cfield", { base: BASE, table: tableId, ...p }))._id), (id) => getField(id), opts);
+  if ((canview || canedit) && created?._id) await updateField(String(created._id), { ...(canview ? { canview } : {}), ...(canedit ? { canedit } : {}) }, opts);
+  return created;
 }
 export async function updateField(id: string, patch: any, opts?: Opts & { allowTypeChangeOnEmptyTable?: boolean }) {
   const before = await own(M.Field, id, "field");
@@ -392,9 +396,13 @@ export const listExpands = async (tableId: string) =>
 export async function createExpand(tableId: string, spec: any, opts?: Opts) {
   await own(M.Table, tableId, "table");
   await assertIds(M.Side, spec.sides, "side");
-  const p = enc(spec);
-  return change("expand.create", tableId, {}, p,
+  // cexpandtemplate has no defaultSides argument (schema rejects it): it is written with uexpandtemplate after creation.
+  const { defaultSides, ...rest } = spec;
+  const p = enc(rest);
+  const created = await change("expand.create", tableId, {}, enc(spec),
     async () => String((await call("cexpandtemplate", { baseId: BASE, tableId, ...p }))._id), (id) => getExpand(id), opts);
+  if (defaultSides && created?._id) await updateExpand(String(created._id), { defaultSides }, opts);
+  return created;
 }
 export async function updateExpand(id: string, patch: any, opts?: Opts) {
   const before = await own(M.ExpandTemplate, id, "expand template");
