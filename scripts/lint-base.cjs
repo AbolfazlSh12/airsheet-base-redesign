@@ -72,6 +72,16 @@ for (const r of d.recordroles || []) {
   else if (!STRINGY.includes(f.type)) add('error', `record role ${r.name}`, `keyed on «${r.table}.${r.field}» (${f.type}): an array value never matches, the role never applies. Key it on a text formula \`mvindex(@{${r.field}}, 0) . ""\` (or a stage scope formula).`);
 }
 
+// 9. a block condition «[role] has any of <collaborator role>» on a portal (user) or visitor side: those users never hold
+//    a collaborator role, so the block is hidden from all of them (a managers page copied to the portal showed nothing)
+const collabRoles = new Set((d.roles || []).map((r) => r.name));
+const sideType = Object.fromEntries((d.sides || []).map((s) => [s.name, s.type]));
+const roleGate = (where, blocks) => { for (const b of blocks || []) if (b.filter && /"field":"\[role\]"/.test(b.filter)) {
+  const hit = names(b.filter).filter((n) => collabRoles.has(n));
+  if (hit.length) add('error', where, `${b.t || 'block'} shown only to collaborator role(s) ${hit.map((n) => `«${n}»`).join('، ')}: a portal/visitor user never has one, the block is always hidden. Scope the content with «has my mobile» / record roles instead.`); } };
+for (const p of d.pages) if (['user', 'visitor'].includes(sideType[p.side])) roleGate(`page ${p.side} / ${p.name}`, p.blocks);
+for (const e of d.expandTemplates) for (const sd of e.sides || []) if (['user', 'visitor'].includes(sideType[sd])) { roleGate(`template ${e.table} / ${e.name} (side ${sd})`, e.blocks); break; }
+
 const order = { error: 0, warn: 1, info: 2 };
 out.sort((a, b) => order[a.level] - order[b.level]);
 for (const o of out) console.log(`${o.level.toUpperCase().padEnd(5)} ${o.where}: ${o.msg}`);

@@ -487,6 +487,11 @@ before quoting them to anyone.
   the role's `canedit` lists only that stage's signature, buttons and reason. That is also the stage guard buttons
   cannot carry. `lint-base.cjs` rule 8 flags a role on a non-string field; when auditing an old base, check every
   record role there first.
+- **A page or template copied from a collaborator side to a portal side keeps its block conditions «[role] has any
+  of <collaborator role>»**, and a portal or visitor user never holds a collaborator role: every such block is hidden
+  from all of them, with no error (the deputy / head inbox copied from «managers» to the portal showed only its header;
+  found only by signing in as a test portal user). Strip the «[role]» conditions when copying and scope the content
+  with «has my mobile» views and record roles instead. `lint-base.cjs` rule 9 flags them on user / visitor sides.
 - **One user side per portal role**: a side takes one user role, and only side membership limits which pages and views
   a portal user reaches; menu filters on one shared side are UI only.
 - **A button field opens a confirmation popup** in the record dialog; UI tests must click the confirm button too.
