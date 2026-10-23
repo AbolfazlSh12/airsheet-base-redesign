@@ -63,6 +63,15 @@ for (const a of d.automations) {
 for (const s of d.sides.filter((x) => x.type === 'collaborator')) for (const m of s.menu || [])
   if (!m.who && !(s.roles || []).length) add('info', `side ${s.name} / ${m.title}`, 'menu item visible to every staff role');
 
+// 8. record roles: search.ts grants a role only when the record's value is a string or number containing the user's
+//    mobile; a lookup / link / multi-select value is an array and never matches → the role silently never applies
+const STRINGY = ['text', 'longText', 'mobile', 'email', 'number', 'formula', 'autonumber'];
+for (const r of d.recordroles || []) {
+  const t = d.tables.find((x) => x.name === r.table); const f = t && t.fields.find((x) => x.name === r.field);
+  if (!f) add('warn', `record role ${r.name}`, `field «${r.field}» of «${r.table}» not found in the dump`);
+  else if (!STRINGY.includes(f.type)) add('error', `record role ${r.name}`, `keyed on «${r.table}.${r.field}» (${f.type}): an array value never matches, the role never applies. Key it on a text formula \`mvindex(@{${r.field}}, 0) . ""\` (or a stage scope formula).`);
+}
+
 const order = { error: 0, warn: 1, info: 2 };
 out.sort((a, b) => order[a.level] - order[b.level]);
 for (const o of out) console.log(`${o.level.toUpperCase().padEnd(5)} ${o.where}: ${o.msg}`);

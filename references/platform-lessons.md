@@ -476,6 +476,17 @@ before quoting them to anyone.
 - **«has my mobile» and record roles go on a plain-string formula, never on a lookup**: add `mvindex(<lookup>,0) . ""`
   copies («اسکوپ …») for every scope; prove each portal view with a count per fake mobile + anonymous (rewrite
   «has my mobile» to «contains <mobile>» when the mobiles have no accounts).
+  The rule in code (`resolvers/search.ts`, record API): a record role is granted only when `record[role.field]` is a
+  **string or number that contains the user's mobile** (or national ID / email per `userProperty`); every role of the
+  base is tried and the **last match wins**. A lookup, link or multi-select value is an array, so a role keyed on one
+  **never applies and nothing reports it**: on the «اداره امنیت» base the requester's role sat on the lookup
+  «موبایل درخواست کننده» and had never worked. Containment means a joined list (`mvjoin(…, ",")`) gives the role to
+  every mobile in it. Make each actor's key a **stage scope**: a formula that holds the actor's mobile only while the
+  record waits for that actor and never equals the requester's own mobile, e.g.
+  `case(@{وضعیت}=="در انتظار تایید معاون", if(@{موبایل معاون (متن)}!=@{موبایل درخواست کننده (متن)}, @{موبایل معاون (متن)}, ""), true(), "") . ""`;
+  the role's `canedit` lists only that stage's signature, buttons and reason. That is also the stage guard buttons
+  cannot carry. `lint-base.cjs` rule 8 flags a role on a non-string field; when auditing an old base, check every
+  record role there first.
 - **One user side per portal role**: a side takes one user role, and only side membership limits which pages and views
   a portal user reaches; menu filters on one shared side are UI only.
 - **A button field opens a confirmation popup** in the record dialog; UI tests must click the confirm button too.
