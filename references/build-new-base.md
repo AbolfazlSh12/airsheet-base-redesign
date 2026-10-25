@@ -54,6 +54,25 @@ actions are not, so re-run those only after reading `changes.log`.
 To redo a table while building: `deleteTable(id)` refuses a table with records or one linked from another table, so
 delete the mock rows and the links first. Never delete anything that holds migrated or customer data.
 
+### Removing a superseded design
+
+When the design changes during the build (or after a demo), remove what it replaces before handing over:
+
+1. Platform backup: `POST /v0/meta/bases/<base>/backups` (REST, owner token; finishes in seconds) — plus the full
+   documents the cleanup step logs.
+2. `unused-inventory.ts` (`JOB_FILES=` every external job) lists the candidates. Objects still *shown* by a page,
+   template or list are not candidates yet: repoint those to the new model first, then re-run.
+3. Remove the candidates from every writer (job code, automations) and deploy that first.
+4. Show the user the list; on OK, one step `NN-cleanup.ts` deletes by name, idempotent, dependents first (a field
+   another remaining field mentions waits for a later round), logging each deleted document in full; delete a table's
+   records before the table. Then strip deleted ids from other views' `fields` / `statsFields` and from table default
+   layouts (`dfield` leaves them there).
+5. Remove the definitions from the earlier build steps (or note that re-running them requires the cleanup step), so
+   no rerun recreates them; every step's `DRY=1` must then print 0 changes.
+6. `DELETED_SINCE=<ts> unused-inventory.ts`: nothing but the platform's own leftovers (orphan fields of a deleted
+   table, its `tableOrder` entry) may still point at a deleted id. Re-check the portal invariant and the archive
+   numbers.
+
 For a large base, split the work across agents with disjoint ownership under one `BRIEF.md`
 (`brief-template.md`, `agent-prompts.md`).
 

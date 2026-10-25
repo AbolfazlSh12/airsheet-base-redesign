@@ -72,6 +72,20 @@ template or view-display decision.
     `node -e` Mongo reads, home-wide searches that name credential files, and one-off steps that create fields or
     automations on a live base; `dump-base.cjs`, `splunk-query.ts` and `lib.ts` steps pass. When a creation step is
     refused, leave the DRY-tested step in `build/steps/` and hand it to the user instead of retrying in another form.
+15. **A design change removes what it replaces, in the same round.** Superseded tables, fields, views, templates,
+    record roles and pages are not "kept but unused": a colleague maintaining the base cannot tell them from the live
+    design, and portal pages kept showing an old model's numbers. Order: platform backup → `unused-inventory.ts` →
+    repoint every page/view still showing the old objects → stop external writers (jobs) using them → user's OK →
+    one idempotent cleanup step that deletes by name → remove them from the build steps → `DELETED_SINCE=…` shows
+    no reference left (`build-new-base.md` «Removing a superseded design»).
+16. **One mobile number per role, for test and preview accounts too.** The server keeps only the last record role
+    that matches a user (`platform-lessons.md`, record roles): one mobile on «unit», «expert» and «evaluator» rows
+    edits as the evaluator everywhere and the self-assessment looks broken. Give each role its own account; tell the
+    customer's users the same in the hand-over guide.
+17. **UI edits are input, not noise.** Before applying any page, view or template step, read its `DRY=1` diff: a
+    change you did not write is an editor autosave or someone's deliberate edit in the UI (a colleague renaming a tab,
+    adding a record title). Write it into the step first, then apply; never apply over it. Edits that would help every
+    base (e.g. "every record template shows its title") go into this skill.
 
 ## Setting up a project
 
@@ -120,6 +134,7 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | `crawl-lists.cjs` | opens pages as a role, clicks every tab, reports every empty list (exit 1) |
 | `portal-invariant.ts` | every view reachable from a portal side is user-scoped or listed for review |
 | `lint-base.cjs` | static lint of a dump for constructs the platform silently mishandles (link-grouped reports, never-computed formulas, signature conditions, empty recipients…); exit 1 on errors |
+| `unused-inventory.ts` | read-only: unused tables / fields / views / templates / pages / empty record roles (side templates count as used; default «همه» columns and table layouts do not); `WHY="<table>\|<field>"` who uses one field; `DELETED_SINCE=<ts>` references left after a cleanup |
 | `check-constraints.ts` | proves every table constraint rejects a duplicate and accepts a fresh value (server's own check, read-only) |
 | `shot-record.cjs` | screenshot of a record dialog (expand template) as a role, by clicking a card on a page |
 | `workflows/1-understand.js`, `2-coverage.js`, `3-remediation.js`, `4-feature-map.js`, `5-explain-base.js` | Workflow-tool scripts: catalogue, coverage, gap plan, feature ↔ requirement map with skeptics, plain-Persian explanation of every page/template/table/automation |
@@ -160,4 +175,7 @@ Persian for anything the customer or the product team reads.
   objects (names + ids), the requirement ids and the document sentence, verified against a dump taken *after* the last
   write. It is what a customer asks first («این چه کار می‌کند؟») and it is the input of the next audit.
 - **Product feedback**: platform bugs and feature ideas met on the way, categorised, for the Airsheet team.
+- **Hand-over guide for the people who will run the base** (Persian, non-technical, 1–2 pages): what each role does,
+  one mobile per role, multi-step actions spelled out («ثبت دوره» ≠ «باز کردن دوره», where each button is), what
+  makes a record editable, what not to change in the editor.
 - New general platform lessons go into `references/platform-lessons.md`, so the next project benefits.

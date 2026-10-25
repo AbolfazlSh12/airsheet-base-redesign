@@ -28,6 +28,10 @@ Nothing an agent says it did counts until one of these checks shows it. Reports 
   includes the side; every STATS item has a field and a leading user-scope condition. Exit criterion: 0 failures.
 - Run hostile checks read-only as anonymous against the real endpoints only to confirm a class of leak exists; never
   print the values you get back.
+- **"A portal user cannot edit"** — check in this order: (1) is the same mobile on several role rows (the last
+  matching record role wins, usually the evaluator's, so the self-assessment fields stay locked)? (2) is the edit
+  scope empty for that row (closed period, completed earlier, record created without the link the scopes need)?
+  (3) does the role's `canedit` list the field? Only then suspect the platform.
 - **Pages that change with the user's state** (e.g. a dashboard before and after approval): there may be no test
   account in that state. Flip a test account's own row to the state with `updateRecord`, screenshot, flip it back, and
   check both lines in `changes.log` (allowed for test accounts only; say so in the report).
@@ -113,3 +117,4 @@ five dashboard tabs were empty for both portal users — readable mock ids broke
 - **Closures claimed after an audit are re-verified from a new dump**, never from the closing script's log: the
   completion report lists each closed gap with the dump evidence (object name/id) that proves it landed.
 - A teammate's concurrent edits show up as unexplained diffs: find the actor in `index=behavior` before reverting.
+  A deliberate UI edit (renamed tab, page size, record title) is written into the step, not reverted.

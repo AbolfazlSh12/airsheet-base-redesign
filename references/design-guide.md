@@ -1166,6 +1166,7 @@ A TEXT header, then TABS by topic. Each tab holds ExpandItem blocks (a question 
       links into the base, every page has a background, every side a name/logo/coloured menu, nothing the editor
       autosaves on open (rules 12, 26, 31, 32).
 - [ ] `background` set (rule 26); no large empty area on the first screen, nothing crowded (rule 27).
+- [ ] A record template shows the record title: `showTitle: true` and a `titleField` (users got lost in dialogs without one).
 - [ ] Every view type, gallery type and block chosen for its use case (rule 29); galleries have covers (rule 30).
 - [ ] Every list on the page has mock rows that pass its filter for each demo account (demo-data.md «Seed per placed view»).
 - [ ] `maxw` chosen:

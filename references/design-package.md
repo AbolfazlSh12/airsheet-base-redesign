@@ -69,6 +69,23 @@ Run two agents in parallel, both read-only:
 - **Platform checker**: reads `platform-lessons.md` and `design-guide.md` and hunts constructs the platform silently
   mishandles (filters the query builder drops, `is not` on optional fields, Grid pickers in forms, readable ids on link
   targets, dialogs with lists on user sides).
+- **Model checker** (can be the skeptic's second pass), each line found missing on a real build:
+  - anything evaluated per period / cycle has rows keyed by period from the first design, with the inputs it depends
+    on (period month, weights) copied into the row; nothing reads one global "current period" setting;
+  - one definition per metric: no simple and weighted variants of the same indicator side by side unless the customer
+    asked for both and said who uses which (they agree to ~1 % and only raise questions);
+  - access fields only for the actor a view or record role actually uses, named by purpose: «اسکوپ X» = who **sees**
+    the row (stays filled in closed periods, so the archive stays visible), «اسکوپ ویرایش X» = who **edits** (empty
+    when the row must be read-only);
+  - a link that access scopes depend on is filled on every creation path (form auto-link **and** the owner grid), or
+    the record is invisible to portal users;
+  - a lifecycle with a waiting state («ثبت» then «باز کردن» then «بستن») says the next step and where to do it next to
+    the action that creates the record, and an "only one active" rule is enforced in the UI (button hidden while
+    another is active), not only in a background job;
+  - every record template shows the record title (`showTitle` + `titleField`): users opening a record dialog
+    without one could not tell which record they were in;
+  - work that must run server-side on a schedule or after a click is a standalone REST job polled by cron, not an
+    automation (`platform-lessons.md` «Background jobs»).
 
 Fix what they find, note what you rejected and why.
 

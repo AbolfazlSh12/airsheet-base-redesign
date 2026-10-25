@@ -132,7 +132,11 @@ export async function call(name: string, args: any) {
   return res;
 }
 
-const j = (x: any) => JSON.stringify(x ?? null);
+// Key order is not part of a saved value: the editor rewrites objects in its own key order, and an order-sensitive
+// compare reported a no-op as a change (and invited re-applying over a UI-edited layout).
+const canon = (x: any): any => Array.isArray(x) ? x.map(canon)
+  : x && typeof x === "object" ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, canon(x[k])])) : x;
+const j = (x: any) => JSON.stringify(canon(x ?? null));
 const diffOf = (before: any, patch: any) => Object.fromEntries(Object.keys(patch)
   .filter((k) => j(norm(k, before?.[k])) !== j(norm(k, patch[k])))
   .map((k) => [k, { from: norm(k, before?.[k]) ?? null, to: norm(k, patch[k]) }]));

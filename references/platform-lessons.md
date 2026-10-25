@@ -511,6 +511,47 @@ before quoting them to anyone.
 - **Periodic snapshots belong in rows keyed by period**: computations that read one global "current period" setting
   rewrite history when it moves. Copy what the archive depends on (period month, weights) into the period row.
 
+## Background jobs (verified 2026-10-19, cloud-back bb9d9023 / develop)
+
+- **An automation cannot run a script.** The action registry (`modules/automation/domain/actions/registry.ts`) has
+  notification, SMS, email, SAP, create/update/delete record, AI and «درخواست API» (`int-api-request`) only.
+- «درخواست API» is **not retried after a failure** (only record actions are), goes through the outbound guard
+  (private / localhost addresses refused unless listed in config `automation.outbound.allowlist`) and has a timeout,
+  so a long job behind it needs a public endpoint that answers at once and works in the background.
+- What worked: a **standalone job over the public REST API, polled by cron** (every 10 min): it finds records in a
+  "to do" state, writes «در حال ساخت از <ts>» on the record before starting, skips a record already running for
+  < 3 h, refuses when a one-only rule is broken (two open periods) and writes the result or error back on the
+  record. A failed run retries on the next tick; users see progress on the record. Shape: `{name, schedule, run}`
+  module + `cli.mjs` + `run.sh` that sources `.env` (Node 18 has no `--env-file`); crontab line
+  `*/10 * * * * $HOME/<job>/run.sh >> $HOME/<job>/run.log 2>&1`.
+- **REST `/v0` answers every read failure with 422** and the generic «مشکلی در انجام درخواست شما…» (catch-all in
+  `RecordController.get`). Reads of tables linked to a record failed this way for a few seconds after a real change
+  on that record (a no-op write did not reproduce it): retry GETs on 422 too (1/2/4/8/8 s), never writes.
+- REST create adds unknown field names as new fields **only** with `autoCreateFields: true`.
+- A platform backup is one REST call: `POST /v0/meta/bases/<base>/backups` (owner token), then `GET` the list until
+  `status: finished` (seconds for a 5k-row base). Restore creates a new base (`createBaseFromBackup`).
+
+## Lessons from the PM evaluation follow-up (2026-10-19 … 25)
+
+- **Lists open a side-assigned template as their "default" template** (`expandTemplate: "default"` in the block):
+  the template is used with no id reference anywhere. A usage analysis that only follows ids marks it unused, and the
+  fields only it shows too — count every template with `sides` as used.
+- **`dtable` deletes only the table document** (also from the UI: cloud-front just calls `dtable` and filters its
+  store): the table's Field documents stay as orphans and its id stays in `Base.tableOrder`. `dfield` leaves the id
+  in other views' `fields` and `statsFields` and in the table's default `layout`; strip them in the cleanup step.
+  Platform message seen during a table delete: "update labels error: Cannot read properties of null (reading 'base')".
+- **The default «همه» grids and a table's default record `layout` list every field**: a field appearing there is not
+  in use. Count real use from pages, templates, other views' filters and columns, formulas, record roles.
+- **A record created outside the form misses the links the form fills** (`formIn` auto-link to the parent): every
+  scope formula built on that link is empty and portal users cannot see the record. Make the link required on every
+  creation path, or check new records for it.
+- **Last-match-wins in practice**: a colleague put one mobile on the unit-head, expert and evaluator rows to rehearse a
+  demo; the evaluator role (created last) won on every row and «edit does not work for expert and unit head» was the
+  report. Preview users built with the owner's mobile on several roles hide the same thing from the builder.
+- **A registered period is not an open one**: a form that creates a record in a waiting state, with the button that
+  starts it on another page, left two periods unopened for days («nothing happens after 30 minutes»). Put the next
+  step next to the form; hide the start button while another period is open.
+
 ## Lessons from the «اداره امنیت» visual redesign (2026-10-22, base 6874edc7…, 21 sides)
 
 - **The customer's review points became design-guide rules 12, 26, 31–34** (forms behind «جدید», visible per-side
