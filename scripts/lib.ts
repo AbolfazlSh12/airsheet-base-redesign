@@ -135,7 +135,8 @@ export async function call(name: string, args: any) {
 // Key order is not part of a saved value: the editor rewrites objects in its own key order, and an order-sensitive
 // compare reported a no-op as a change (and invited re-applying over a UI-edited layout).
 const canon = (x: any): any => Array.isArray(x) ? x.map(canon)
-  : x && typeof x === "object" ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, canon(x[k])])) : x;
+  : x && typeof x === "object" && Object.getPrototypeOf(x) === Object.prototype
+    ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, canon(x[k])])) : x;
 const j = (x: any) => JSON.stringify(canon(x ?? null));
 const diffOf = (before: any, patch: any) => Object.fromEntries(Object.keys(patch)
   .filter((k) => j(norm(k, before?.[k])) !== j(norm(k, patch[k])))
@@ -334,6 +335,7 @@ export async function updateSide(id: string, patch: any, opts?: Opts) {
   await assertRoles(patch.roles);
   await assertIds(M.Page, patch.pagesOrder, "page of this side", { side: id });
   const p = enc(patch);
+  if (typeof patch.default === "boolean") p.default = patch.default; // a side's «default» is a Boolean, not a JSON string
   return change("side", id, before, p, () => call("uside", { base: BASE, _id: id, ...p }), () => getSide(id), opts);
 }
 

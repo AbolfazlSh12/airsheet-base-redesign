@@ -552,6 +552,24 @@ before quoting them to anyone.
   starts it on another page, left two periods unopened for days («nothing happens after 30 minutes»). Put the next
   step next to the form; hide the start button while another period is open.
 
+## Recompute cascades (verified 2026-10-26, PM base, ~5,000 dependent rows)
+
+- **A changed lookup source does not reach every dependent row.** After the units' observer formula changed (new
+  centre / vice-president mobiles), lookups of it on programs, activities and period rows stopped at ~25 % and stayed
+  there (14 min, no progress). The same happens when someone moves a mobile between «کاربران» rows: users then see
+  part of their data (reported as «مدیر مرکز فقط یک برنامه می‌بیند، داشبوردها تقریباً خالی»). **Fix:** re-save each
+  dependent lookup field (`updateField(id, {name}, {force: true})` → `ufield` re-runs its join for every row and
+  recomputes the table's formulas); hop by hop (parent table first), with a wait between hops. Full in ~2 min.
+- **Effects of a script's writes run inside the script process** and die at `process.exit` after `SETTLE_MS`: a
+  cascade over thousands of rows was cut off half-way. Give heavy steps a long `SETTLE_MS`, or make the triggering
+  write through the server (REST PATCH), whose process outlives the request.
+- **Rows created with `importRows` + `bulkUpsert` do not update their parents' rollups** (a CONCATENATE of a
+  new user's mobile stayed empty): `updateRecord` the child once (`force`) afterwards.
+- An empty numeric-ish rollup reaches formulas as `0` (fillnull): `if(isnull(x),"",mvjoin(x,","))` returns `"0"`.
+  Harmless inside a mobile scope (no mobile contains "0" as a whole), but visible.
+- A side's `default` is a Boolean (`uside`); `lib.ts` encodes `default` as a JSON string for fields, so
+  `updateSide` now passes a Boolean `default` through unchanged.
+
 ## Lessons from the «اداره امنیت» visual redesign (2026-10-22, base 6874edc7…, 21 sides)
 
 - **The customer's review points became design-guide rules 12, 26, 31–34** (forms behind «جدید», visible per-side
