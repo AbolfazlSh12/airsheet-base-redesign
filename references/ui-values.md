@@ -48,6 +48,7 @@ After every build round, run `scripts/ui-values-lint.ts`. It must report `0 valu
 | Intelligence `layout[]` | no `filter`, `legend:false` | `filter: []` (otherwise its filter menu crashes), `legend: true` |
 | form `inputs[]` | `recordsSelect`, `recordsMultiple`, `recordsForm:""` | Leave them out. Their editors were removed in 4fc6bad3b. |
 | form `layout[0]` | `logo:""`, `splitBy:""` | `logo:null`; leave `splitBy` out |
+| form `layout[0].defaultValues` | a value on a lookup / formula / rollup / count / auto field | Nothing. The form cell is read-only (`DataCell.vue`), so the owner can neither change nor remove it. It also appears when someone changes a field's type after the build wrote its default: re-run the lint after the customer edits fields. |
 | table layout VIEW block | `filterInField` = a deleted field | Repoint it to an existing link field, or remove the block |
 | page / template VIEW block | `viewFilterbar` | Leave it out. The control was removed in 54b11ed33 and the views still read it. |
 | page / template VIEW block | `export:true` | `downloadList:true` (`export` was removed in 54b11ed33) |

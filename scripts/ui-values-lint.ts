@@ -7,6 +7,7 @@ import * as L from "./lib";
 const SIDEBAR_COLORS = ["blue3", "cyan3", "teal3", "green3", "yellow3", "orange3", "red3", "pink3", "purple3", "gray3",
   "blue4", "cyan4", "teal4", "green4", "yellow4", "orange4", "red4", "pink4", "purple4", "gray4", "#000000", "#ffffff"];
 const PALETTE = /^var\(--(blue|cyan|teal|green|yellow|orange|red|pink|purple|gray)[2-4]?\)$/;
+const READONLY_TYPES = ["lookup", "rollup", "count", "formula", "autonumber", "createdby", "modifiedby", "createdtime", "modifiedtime"];
 const TIME_TOKENS = new Set(["now", "today", "clock", "today-1d", "today+1d", "now+1h", "today+7d", "today|jalali", "today|gregorian", "epoch"]);
 
 L.run(async () => {
@@ -39,6 +40,10 @@ L.run(async () => {
       if (v.type === "Intelligence" && !Array.isArray(l.filter)) hit(w, "chart without filter [] (its filter menu then crashes)");
       if (v.type === "Intelligence" && l.legend === false) hit(w, "chart legend false (no editor)");
       for (const i of l.inputs || []) if ("recordsSelect" in i || "recordsMultiple" in i) hit(w, `form input ${i.name}: recordsSelect/recordsMultiple (editors removed in 4fc6bad3b)`);
+      if (v.type === "Form" && l.defaultValues && typeof l.defaultValues === "object") for (const k of Object.keys(l.defaultValues)) {
+        const f = byId.get(k);
+        if (f && READONLY_TYPES.includes(f.type)) hit(w, `default on ${f.type} field «${f.name}» (the form cell is read-only: it can be neither changed nor removed)`);
+      }
     }
   }
 
