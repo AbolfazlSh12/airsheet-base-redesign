@@ -106,8 +106,9 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
     TitleDivider buttons use `linktype:"page"` + `side` + `path` (+ `link:""`/`url:""`). A `url` of `/b/<base>/<side>/<page>`
     or a full app URL breaks on another host or custom domain and is flagged by the customer as wrong.
 32. **Every side has a finished header.** Persian display `name`, a `logo`/`darkLogo` whose file exists on *this* server
-    (a base restored from a backup keeps side-logo keys whose files are gone; the base logo usually survives), and a Lucide
-    `icon` + `iconColor` (`var(--<hue>3)`, varied and meaningful) on **every** menu item and child — a sidebar of grey
+    (a base restored from a backup keeps side-logo keys whose files are gone; the base logo usually survives), and — on a
+    `sidebar`-layout side, the only layout with an icon editor — a Lucide `icon` + `iconColor` from the sidebar picker
+    (`<hue>3` / `<hue>4`, varied and meaningful; ui-values.md) on **every** menu item and child — a sidebar of grey
     house icons was the first complaint. A side with pages but no menu gets one (each page of the side, page links). A
     landing/hub side (visitor menu) shows MENU `type3` icon cards (`visual-kit.ts navCards`), never a column of plain
     coloured buttons.
@@ -447,7 +448,7 @@ The style values observed across the data: radius is usually 10, 15 or 20; paddi
 | `displayListName` | **true**. Shows the view name for collaborators. Set it to `false` | ViewApp |
 | `viewToolbar` | **visible** (collaborators) or `invisible`. Owners always see it | ViewApp:67 |
 | `showSettings`, `showFilter`, `showSort`, `showGroup`, `showSearchFields`, `showPageSize` | Individual toolbar items; they default to true when the toolbar is visible | ViewApp `initToolbarDefaults` |
-| `viewFilterbar` | **visible** or `invisible`. The search box and filter chips row of Gallery / Grid for non-owners | `ViewGallery.vue:213` |
+| ~~`viewFilterbar`~~ | **Never write it.** Its control left the block menu in 54b11ed33 (2026-02-22) but the views still read it, so a written value is stuck (ui-values.md) | — |
 | `newable` | **access** (by permission), `all` (via form, for everyone) or `denied` | ViewSettingMenu, `ViewGallery.vue:143` |
 | `newForm` + `newFormPage` | Open this form in a dialog for «جدید». `newFormPage = {"id":"<uuid>","type":"VIEW","details":{"value":"<formViewId>"}}` | `ViewGrid.vue:665`, gallery `createOrDialog` |
 | `buttenText` (sic) | Label of the new button (default «جدید») | ViewGrid / ViewGallery |
@@ -461,7 +462,7 @@ The style values observed across the data: radius is usually 10, 15 or 20; paddi
 
 **Clean portal list (supplier sees only their own rows through the view's filter or record roles):**
 ```json
-{"id":"v1","type":"VIEW","details":{"value":{"value":"<viewId>","expandTemplate":"<templateId>","expandMode":"dialog","displayListName":false,"viewToolbar":"invisible","viewFilterbar":"visible","newable":"denied","lockSettings":true}}}
+{"id":"v1","type":"VIEW","details":{"value":{"value":"<viewId>","expandTemplate":"<templateId>","expandMode":"dialog","displayListName":false,"viewToolbar":"invisible","newable":"denied","lockSettings":true}}}
 ```
 
 **List with a create button that opens a form:**
@@ -875,7 +876,7 @@ Other gallery `layout[0]` keys:
 
 ### 7.2 Sidebar header (when `layoutType:"sidebar"`): `layouts/SidebarLayout.vue`
 It uses the same `header` JSON: `name`, `logo`, `menuItems`, `themeButton`.
-- Menu items get a Lucide `icon` (default `Home`) and an `iconColor` (a token or CSS colour), shown in a 32 px square.
+- Menu items get a Lucide `icon` (default `Home`) and an `iconColor` from the picker (`<hue>3`, `<hue>4`, `#000000`, `#ffffff`), shown in a 32 px square.
 - The active item is `bg-primary/10 text-primary`.
 - The user card and theme toggle sit at the bottom.
 - **No footer.**
@@ -947,7 +948,7 @@ Title and cover behaviour:
 ```json
 [{"title":"ثبت درخواست تحویل","description":"قرارداد را انتخاب و اقلام را وارد کنید.","logo":"",
   "inputs":[{"id":"<fieldId>","name":"قرارداد","description":"از فهرست قراردادهای خود انتخاب کنید","required":true,"invisible":false,"conditions":[],
-             "recordsSelect":true,"recordsCreate":false,"recordsMultiple":false,"recordsForm":"","recordsContext":false}],
+             "recordsCreate":false,"recordsContext":false}],
   "button":{"text":"ثبت و ارسال","color":"blue"},
   "doneMessage":"درخواست ثبت شد.","redirect":false,"redirectURL":"","delayedRedirect":false,"redirectDelay":3,
   "submitAnotherBtn":false,"showNewBlank":false,
@@ -1007,10 +1008,10 @@ Placeholders: `<…>`. Read side and page ids with `L.listSides()` / `L.listPage
  {"id":"c","type":"COLUMNS2","details":{"value":""},
   "column1":{"label":"1","name":"c-a","splitter":50,"content":{"name":"1","blocks":[
     {"id":"td2","type":"TitleDivider","details":{"title":"تأمین‌کنندگان در انتظار","showIndicator":true,"indicatorColor":"var(--yellow3)","showLine":true,"lineColor":"var(--gray2)","titleColor":"","showButton":false}},
-    {"id":"v1","type":"VIEW","details":{"value":{"value":"<galleryFeaturedView pageSize 5>","expandTemplate":"<tpl>","displayListName":false,"viewToolbar":"invisible","viewFilterbar":"invisible","newable":"denied"}}}]}},
+    {"id":"v1","type":"VIEW","details":{"value":{"value":"<galleryFeaturedView pageSize 5>","expandTemplate":"<tpl>","displayListName":false,"viewToolbar":"invisible","newable":"denied"}}}]}},
   "column2":{"label":"2","name":"c-b","content":{"name":"2","blocks":[
     {"id":"td3","type":"TitleDivider","details":{"title":"مهلت‌های نزدیک","showIndicator":true,"indicatorColor":"var(--red3)","showLine":true,"lineColor":"var(--gray2)","titleColor":"","showButton":false}},
-    {"id":"v2","type":"VIEW","details":{"value":{"value":"<featured list sorted by deadline>","expandTemplate":"<tpl>","displayListName":false,"viewToolbar":"invisible","viewFilterbar":"invisible","newable":"denied"}}}]}}}
+    {"id":"v2","type":"VIEW","details":{"value":{"value":"<featured list sorted by deadline>","expandTemplate":"<tpl>","displayListName":false,"viewToolbar":"invisible","newable":"denied"}}}]}}}
 ]}
 ```
 
@@ -1023,7 +1024,7 @@ Notes:
 {"name":"","maxw":"tw-max-w-6xl","blocks":[
  {"id":"h","type":"TEXT","details":{"value":"<div style=\"padding:18px 4px 6px\"><div style=\"font-size:24px;font-weight:800;line-height:1.5;margin:0\">قراردادهای من</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc));margin:4px 0 0\">برای دیدن بندها، سفارش‌ها و مبادلات روی هر قرارداد بزنید.</div></div>"}},
  {"id":"tb","type":"TABS","tabsBgColor":"base-100","details":[
-   {"label":"فعال","name":"t1","color":"base-100","bold":true,"content":{"name":"فعال","blocks":[{"id":"v1","type":"VIEW","details":{"value":{"value":"<activeContractsFeatured>","expandTemplate":"<contractTpl>","expandMode":"dialog","displayListName":false,"viewToolbar":"invisible","viewFilterbar":"visible","newable":"denied"}}}]}},
+   {"label":"فعال","name":"t1","color":"base-100","bold":true,"content":{"name":"فعال","blocks":[{"id":"v1","type":"VIEW","details":{"value":{"value":"<activeContractsFeatured>","expandTemplate":"<contractTpl>","expandMode":"dialog","displayListName":false,"viewToolbar":"invisible","newable":"denied"}}}]}},
    {"label":"خاتمه‌یافته","name":"t2","color":"base-100","bold":false,"content":{"name":"خاتمه‌یافته","blocks":[{"id":"v2","type":"VIEW","details":{"value":{"value":"<closedContracts>","expandTemplate":"<contractTpl>","displayListName":false,"viewToolbar":"invisible","newable":"denied"}}}]}}]}
 ]}
 ```
@@ -1069,7 +1070,7 @@ The alternative to tabs is a single Gallery view with `layout[0].advancedHeader:
     {"id":"a","type":"ALERT","details":{"value":"<b>پیش از ارسال</b>","subtitle":"اقلام باید با بندهای قرارداد هم‌خوان باشند. پس از ثبت، درخواست را از «پیگیری درخواست‌ها» دنبال کنید.","color":"blue"}},
     {"id":"fb","type":"FileBlock","details":{"listTitle":"فرم‌های نمونه","files":[]}}]}}},
  {"id":"td","type":"TitleDivider","details":{"title":"درخواست‌های اخیر من","showIndicator":true,"indicatorColor":"var(--blue3)","showLine":true,"lineColor":"var(--gray2)","titleColor":"","showButton":false}},
- {"id":"v","type":"VIEW","details":{"value":{"value":"<myRequestsFeatured>","expandTemplate":"<reqTpl>","displayListName":false,"viewToolbar":"invisible","viewFilterbar":"invisible","newable":"denied"}}}
+ {"id":"v","type":"VIEW","details":{"value":{"value":"<myRequestsFeatured>","expandTemplate":"<reqTpl>","displayListName":false,"viewToolbar":"invisible","newable":"denied"}}}
 ]}
 ```
 
@@ -1098,7 +1099,7 @@ There is no count-based conditional in pages, and Gallery `cards`/`featured` ren
    {"id":"g3","label":"راهنما","lucidIcon":"LifeBuoy","iconBgColor":"var(--yellow)","iconColor":"var(--yellow4)","color":"hsl(var(--b1))","borderEnabled":true,"borderWidth":1,"borderColor":"var(--gray)","shadowEnabled":true,"shadowIntensity":16,"align":"center","linktype":"page","side":"<sideId>","path":"<helpPage>","filter":[],"value":""}]}},
  {"id":"feat","type":"TEXT","details":{"value":"<div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0\"><div style=\"background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">شفافیت معاملات</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">فراخوان‌ها، مهلت‌ها و نتایج در دسترس همه.</div></div><div style=\"background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">پرونده‌ی یکپارچه</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">اطلاعات شرکت، گواهی‌ها و سوابق در یک پرونده.</div></div><div style=\"background-color:hsl(var(--b1));color:hsl(var(--bc));border:1px solid hsl(var(--b3));border-radius:16px;padding:20px\"><div style=\"font-size:16px;font-weight:700;margin:0 0 6px\">پیگیری آنلاین</div><div style=\"font-size:13px;line-height:1.9;color:hsl(var(--nc))\">وضعیت درخواست‌ها و پرداخت‌ها را لحظه‌ای ببینید.</div></div></div>"}},
  {"id":"tdn","type":"TitleDivider","details":{"title":"آخرین اخبار","showIndicator":true,"indicatorColor":"var(--blue3)","showLine":true,"lineColor":"var(--gray2)","titleColor":"","showButton":true,"buttonText":"همه‌ی اخبار","buttonColor":"var(--blue)","buttonTextColor":"var(--blue4)","linktype":"page","side":"<sideId>","path":"<newsPage>","openInNewTab":false}},
- {"id":"news","type":"VIEW","details":{"value":{"value":"<newsGallery layout type cardsHorizontal, brandField=image>","expandTemplate":"<newsTpl>","displayListName":false,"viewToolbar":"invisible","viewFilterbar":"invisible","newable":"denied"}}}
+ {"id":"news","type":"VIEW","details":{"value":{"value":"<newsGallery layout type cardsHorizontal, brandField=image>","expandTemplate":"<newsTpl>","displayListName":false,"viewToolbar":"invisible","newable":"denied"}}}
 ]}
 ```
 

@@ -12,6 +12,7 @@ const TOOL = ["showSettings", "showFilter", "showSort", "showGroup", "showSearch
 const TD = ["title", "showLine", "showButton", "buttonText", "showIndicator", "indicatorSizeKey", "indicatorOrient", "linktype", "openInNewTab", "url", "side", "indicatorColor", "buttonColor", "buttonTextColor", "lineColor", "titleColor"];
 const LIST = ["Grid", "Gallery", "Kanban", "Calendar"];
 
+const SIDEBAR_COLORS = ["blue3", "cyan3", "teal3", "green3", "yellow3", "orange3", "red3", "pink3", "purple3", "gray3", "blue4", "cyan4", "teal4", "green4", "yellow4", "orange4", "red4", "pink4", "purple4", "gray4", "#000000", "#ffffff"];
 L.run(async () => {
   const V: Record<string, any> = {}; const forms: Record<string, any[]> = {};
   for (const t of await L.listTables()) for (const v of await L.listViews(String(t._id))) {
@@ -52,7 +53,9 @@ L.run(async () => {
     if (!h.name || !h.logo) F.header.push(`${s.name}: ${!h.name ? "no display name " : ""}${!h.logo ? "no logo" : ""}`);
     const items = (m: any[]): any[] => (m || []).flatMap((x) => [x, ...items(x.children)]);
     for (const it of items(h.menuItems)) {
-      if (!it.icon || !it.iconColor) F.header.push(`${s.name}: menu «${it.title}» without icon/colour`);
+      // icon/iconColor have an editor only in the sidebar layout (SidebarMenuSetting.vue presetColors); a website header has none
+      if (s.layoutType === "sidebar" && (!it.icon || !SIDEBAR_COLORS.includes(it.iconColor))) F.header.push(`${s.name}: menu «${it.title}» without icon or with a colour the picker does not offer (${it.iconColor})`);
+      if (s.layoutType !== "sidebar" && (it.icon || it.iconColor)) F.header.push(`${s.name}: menu «${it.title}» carries icon/iconColor, which a website header cannot edit`);
       if (it.linktype !== "page" && intoBase(it.link ?? it.url)) F.urlLink.push(`${s.name}|header «${it.title}»`);
     }
     for (const p of pages[String(s._id)]) {

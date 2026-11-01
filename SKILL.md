@@ -86,6 +86,15 @@ template or view-display decision.
     change you did not write is an editor autosave or someone's deliberate edit in the UI (a colleague renaming a tab,
     adding a record title). Write it into the step first, then apply; never apply over it. Edits that would help every
     base (e.g. "every record template shows its title") go into this skill.
+18. **Write only values the user could enter in the UI.** Every value written to the database (field, view, page block,
+    template, side, constraint, role, automation) must be one an Airsheet editor itself writes for that setting, in the
+    same format, so the owner can open it and change it. Before writing an enum-like, boolean, colour, numeric or
+    formatted key, read the component that edits it and use one of its options; a key whose control was removed is not
+    written. A need the editor cannot express is rewritten in a form it can, or reported as a missing capability —
+    never stored as an invented value. `scripts/ui-values-lint.ts` must print 0 after every round
+    (`references/ui-values.md`: the method and every value found so far with what to write instead). 2026-11-01: a
+    link-picker rule on `[role]` (no editor offers it, never evaluated) left the owner and the receptionist with an
+    empty child picker; the sweep that followed found two dozen more kinds in the same base.
 
 ## Setting up a project
 
@@ -136,6 +145,7 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | `lint-base.cjs` | static lint of a dump for constructs the platform silently mishandles (link-grouped reports, never-computed formulas, signature conditions, empty recipients…); exit 1 on errors |
 | `unused-inventory.ts` | read-only: unused tables / fields / views / templates / pages / empty record roles (side templates count as used; default «همه» columns and table layouts do not); `WHY="<table>\|<field>"` who uses one field; `DELETED_SINCE=<ts>` references left after a cleanup |
 | `check-constraints.ts` | proves every table constraint rejects a duplicate and accepts a fresh value (server's own check, read-only) |
+| `ui-values-lint.ts`, `upload-backgrounds.ts` | read-only lint for values no editor writes (non-negotiable 18, exit 1); turns `data:` page / SECTION backgrounds into uploaded files, the only form the background controls write (`S3_PUBLIC`, `BUCKET_PREFIX`, `DRY=1`) |
 | `shot-record.cjs` | screenshot of a record dialog (expand template) as a role, by clicking a card on a page |
 | `workflows/1-understand.js`, `2-coverage.js`, `3-remediation.js`, `4-feature-map.js`, `5-explain-base.js` | Workflow-tool scripts: catalogue, coverage, gap plan, feature ↔ requirement map with skeptics, plain-Persian explanation of every page/template/table/automation |
 | `build-report.py` + `report-template.html` | a self-contained RTL HTML report (design or comparison) from a JSON |

@@ -10,6 +10,13 @@ import { BASE } from "./lib";
 export const uid = (k: string) => { const h = createHash("sha1").update(`${BASE}-visual:` + k).digest("hex");
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`; };
 const svgUri = (svg: string) => "data:image/svg+xml," + encodeURIComponent(svg).replace(/'/g, "%27");
+// Backgrounds have no UI form but an upload (BackgroundSettings / SectionBlock store `${S3}/${bucket_prefix}uploads/<key>`):
+// once steps/27-upload-backgrounds.ts has uploaded an image, the generators return its URL, so a re-run writes the same value.
+const UPLOADED_BG = `${__dirname}/../data/ui-audit/uploaded-backgrounds.json`;
+const bgUri = (svg: string) => {
+  const uri = svgUri(svg);
+  try { return JSON.parse(require("fs").readFileSync(UPLOADED_BG, "utf8"))[createHash("sha1").update(uri).digest("hex").slice(0, 16)] ?? uri; } catch { return uri; }
+};
 
 // ---------- tones: one hue per side ----------
 export type Tone = { name: string; dark: string; mid: string; accent: string; token: string; pattern?: string };
@@ -47,7 +54,7 @@ const PATTERNS: Record<string, (c: string, a: string) => string> = {
 export const PATTERN_STRENGTH = Number(process.env.PATTERN_STRENGTH ?? 0.55);
 const soften = (svg: string) => svg.replace(/(stroke|fill)-opacity="([\d.]+)"/g, (_m, k, v) => `${k}-opacity="${+(Number(v) * PATTERN_STRENGTH).toFixed(3)}"`);
 export const PATTERN_NAMES = Object.keys(PATTERNS);
-export const pageBg = (t: Tone, pattern = t.pattern ?? "dots") => ({ type: "image", fixed: true, value: svgUri(
+export const pageBg = (t: Tone, pattern = t.pattern ?? "dots") => ({ type: "image", fixed: true, value: bgUri(
   `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">` +
   `<defs><linearGradient id="g" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.accent}" stop-opacity="0.16"/>` +
   `<stop offset="0.5" stop-color="${t.accent}" stop-opacity="0.04"/><stop offset="1" stop-color="${t.mid}" stop-opacity="0.10"/></linearGradient>` +
@@ -56,7 +63,7 @@ export const pageBg = (t: Tone, pattern = t.pattern ?? "dots") => ({ type: "imag
   `<circle cx="1480" cy="80" r="260" fill="${t.mid}" fill-opacity="0.065"/><circle cx="90" cy="930" r="220" fill="${t.accent}" fill-opacity="0.08"/></svg>`) });
 
 // ---------- hero (image 3): dark gradient + diamond pattern, chip, title, round icon ----------
-const heroBg = (t: Tone) => svgUri(
+const heroBg = (t: Tone) => bgUri(
   `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="240" viewBox="0 0 1200 240" preserveAspectRatio="xMidYMid slice">` +
   `<defs><linearGradient id="h" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.mid}"/><stop offset="1" stop-color="${t.dark}"/></linearGradient>` +
   `<pattern id="p" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="34" height="34" fill="none" stroke="#ffffff" stroke-opacity="0.06"/></pattern></defs>` +
@@ -97,7 +104,7 @@ const badge = (name: string, t: Tone) => svgUri(
 
 /** Hero band: chip (breadcrumb-like eyebrow), title, optional one-line subtitle, round icon badge. */
 export const hero = (k: string, t: Tone, o: { eyebrow: string; title: string; sub?: string; icon: string }) => ({
-  id: uid(k), type: "SECTION", details: { value: "" }, filter: [], padding: "26", radius: "20", backgroundImage: heroBg(t),
+  id: uid(k), type: "SECTION", details: { value: "" }, filter: [], padding: 26, radius: "20", backgroundImage: heroBg(t),
   shadowEnabled: true, shadowIntensity: 14, maxWidth: "full",
   section: { label: "section", name: uid(k + "-s"), content: { name: "section", blocks: [
     { id: uid(k + "-c"), type: "COLUMNS2", details: { value: "" },
@@ -117,14 +124,14 @@ export const heading = (k: string, t: Tone, title: string, icon = "grid", hint =
   `${title}` + (hint ? `<span style="font-size:13px;font-weight:400;color:hsl(var(--nc));margin:0 10px 0 0">${hint}</span>` : "") + `</p>` } });
 
 /** White card that wraps lists, boards, dashboards. */
-export const card = (k: string, blocks: any[], o: { padding?: string } = {}) => ({
-  id: uid(k), type: "SECTION", details: { value: "" }, filter: [], color: "base-100", padding: o.padding ?? "16", radius: "16",
+export const card = (k: string, blocks: any[], o: { padding?: number } = {}) => ({
+  id: uid(k), type: "SECTION", details: { value: "" }, filter: [], color: "base-100", padding: o.padding ?? 16, radius: "16",
   borderLine: true, borderWeight: 1, borderColor: "gray2", shadowEnabled: true, shadowIntensity: 8, maxWidth: "full",
   section: { label: "section", name: uid(k + "-s"), content: { name: "section", blocks } } });
 
 /** Short info card (title + ≤ 3 short lines) on a pale token — never long paragraphs. */
 export const info = (k: string, token: string, title: string, lines: string[]) => ({
-  id: uid(k), type: "SECTION", details: { value: "" }, filter: [], color: token, padding: "18", radius: "16", maxWidth: "full",
+  id: uid(k), type: "SECTION", details: { value: "" }, filter: [], color: token, padding: 18, radius: "16", maxWidth: "full",
   section: { label: "section", name: uid(k + "-s"), content: { name: "section", blocks: [
     { id: uid(k + "-t"), type: "TEXT", details: { value:
       `<p style="margin:0 0 6px;font-size:15px;font-weight:800;line-height:1.7">${title}</p>` +
@@ -141,15 +148,15 @@ export const tabs = (k: string, list: { label: string; blocks: any[] }[]) => ({ 
 /** VIEW block with every display key the checklist wants. */
 export const view = (k: string, viewId: string, o: { toolbar?: boolean; newable?: string; template?: string } = {}) => ({
   id: uid(k), type: "VIEW", details: { value: { value: viewId, expandTemplate: o.template ?? "default", displayListName: false,
-    viewToolbar: o.toolbar ? "visible" : "invisible", viewFilterbar: o.toolbar ? "visible" : "invisible",
-    newable: o.newable ?? "access", filterType: "none" } } });
+    viewToolbar: o.toolbar ? "visible" : "invisible",
+    newable: o.newable ?? "access" } } });
 // newable "access" keeps the «جدید» button an old block had (a default of "denied" silently removed it); every list with
 // «جدید» then needs its form: new-forms.ts sets newForm/newFormPage, page-lint.ts fails without it.
 
 /** Icon navigation cards (MENU type3). */
 export const navCards = (k: string, items: { label: string; sub: string; icon: string; tone: string; side: string; path: string }[]) => ({
   id: uid(k), type: "MENU", details: { value: items.map((x, i) => ({ id: uid(k + i), label: x.label, subtitle: x.sub, theme: "type3",
-    cardMediaType: "icon", lucidIcon: x.icon, bgColor: "hsl(var(--b1))", iconBgColor: `var(--${x.tone})`, textColor: `var(--${x.tone}4)`,
+    cardMediaType: "icon", lucidIcon: x.icon, bgColor: "hsl(var(--b1))", iconBgColor: `var(--${TONES[x.tone]?.token ?? x.tone})`, textColor: `var(--${TONES[x.tone]?.token ?? x.tone}4)`,
     linktype: "page", side: x.side, path: x.path, filter: [], value: "" })) } });
 
 // The editor (ViewApp.vue initToolbarDefaults, cloud-front:1122) sets these six flags to true on every VIEW block with
@@ -180,10 +187,13 @@ export const pageDoc = (name: string, t: Tone, blocks: any[], o: { maxw?: string
 /** Side header: logo, Persian display name, a Lucide icon + colour on every menu item and child (keeps every item and
  *  link; an item that already has a colour keeps it). `logo` = an uploaded key that EXISTS on this server: a base
  *  restored from a backup keeps side logo keys whose files are gone (broken image) — the base logo usually survives. */
-export const sideHeader = (header: any, name: string, logo: string, icons: Record<string, { icon: string; color: string }>, fallback: { icon: string; color: string }) => {
+export const sideHeader = (header: any, name: string, logo: string, icons: Record<string, { icon: string; color: string }>, fallback: { icon: string; color: string }, layoutType = "sidebar") => {
+  // icon/iconColor have an editor only in the sidebar layout (SidebarMenuSetting.vue: colours <name>3/<name>4)
+  const pick = (c: string) => (/\d$|^#/.test(c) ? c : `${c}3`);
   const paint = (items: any[]): any[] => (items || []).map((m) => {
     const ic = icons[m.title] ?? fallback;
-    return { ...m, icon: m.icon && m.icon !== "Home" && !icons[m.title] ? m.icon : ic.icon, iconColor: icons[m.title]?.color ?? m.iconColor ?? ic.color, children: paint(m.children) };
+    if (layoutType !== "sidebar") { const { icon, iconColor, ...rest } = m; return { ...rest, children: paint(m.children) }; }
+    return { ...m, icon: m.icon && m.icon !== "Home" && !icons[m.title] ? m.icon : ic.icon, iconColor: pick(icons[m.title]?.color ?? m.iconColor ?? ic.color), children: paint(m.children) };
   });
   return { ...header, name, logo, darkLogo: logo, menuItems: paint(header?.menuItems) };
 };
