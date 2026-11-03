@@ -2,6 +2,7 @@
 // searchAPI / sharedStats evaluate it (filterExpression + Splunk). Proves a portal filter really scopes rows: the query
 // builder silently DROPS a condition it cannot compile for a field type, and the view then returns every row.
 // Run from cloud-back:  AS=0999xxxxxx1,0999xxxxxx2,anon npx tsx <work>/build/view-count-as.ts <viewId> [...]
+// CONTAINS=1 for mobiles that have no account yet («has my mobile» evaluated as «contains <mobile>»).
 // Prints counts only, never record values.
 import * as L from "./lib";
 const APP = process.env.AIRSHEET_BACKEND ?? process.cwd();
@@ -11,12 +12,17 @@ L.run(async () => {
   const who = (process.env.AS || "anon").split(",");
   const users = await mongoose.connection.collection("users").find({ mobile: { $in: who } }).project({ mobile: 1 }).toArray();
   const uid = (m: string) => (m === "anon" ? undefined : users.find((u: any) => u.mobile === m)?._id);
-  for (const m of who) if (m !== "anon" && !uid(m)) throw new Error(`no user with mobile ${m}`);
+  // CONTAINS=1: mobiles without accounts — evaluate «has my mobile» as «contains <mobile>» (platform-lessons, PM build)
+  const CONTAINS = process.env.CONTAINS === "1";
+  for (const m of who) if (m !== "anon" && !uid(m) && !CONTAINS) throw new Error(`no user with mobile ${m}`);
+  const forUser = (filters: any, m: string) => CONTAINS && m !== "anon"
+    ? JSON.stringify(filters || []).replace(/"operator":"has my mobile","operand":null/g, `"operator":"contains","operand":"${m}"`)
+    : JSON.stringify(filters || []);
   for (const id of process.argv.slice(2)) {
     const v = await L.getView(id);
     const counts: string[] = [];
     for (const m of who) {
-      const f = await filterExpression(JSON.stringify(v.filters || []), L.BASE, uid(m));
+      const f = await filterExpression(forUser(v.filters, m), L.BASE, uid(m));
       const n = (await L.listRecords(v.table, `| dedup id ${f.before} | search NOT status="_deleted_record" | search table="*" ${f.expression} ${f.after}`)).length;
       counts.push(`${m}=${n}`);
     }
