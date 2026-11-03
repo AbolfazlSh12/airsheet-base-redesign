@@ -36,6 +36,7 @@ export const TONES: Record<string, Tone> = {
 // the patterns below at full strength were "too busy"; PATTERN_STRENGTH 0.55 + the wash below was accepted.
 // Give each side a different pattern (not only a different hue). Transparent, so dark mode still works.
 const PATTERNS: Record<string, (c: string, a: string) => string> = {
+  plain: () => `<pattern id="q" width="1" height="1" patternUnits="userSpaceOnUse"/>`, // wash and corner circles only
   circuit: (c, a) => `<pattern id="q" width="90" height="90" patternUnits="userSpaceOnUse"><path d="M0 45h30l10-10h20l10 10h20M45 0v25l-8 8M45 90v-20l8-8" fill="none" stroke="${c}" stroke-opacity="0.16" stroke-width="1.6"/><circle cx="30" cy="45" r="3" fill="${a}" fill-opacity="0.35"/><circle cx="70" cy="45" r="3" fill="${a}" fill-opacity="0.35"/><circle cx="45" cy="25" r="2.5" fill="${c}" fill-opacity="0.3"/></pattern>`,
   hex: (c) => `<pattern id="q" width="56" height="97" patternUnits="userSpaceOnUse"><path d="M28 0l28 16v32L28 64 0 48V16zM28 64v33" fill="none" stroke="${c}" stroke-opacity="0.15" stroke-width="1.4"/></pattern>`,
   waves: (c) => `<pattern id="q" width="120" height="40" patternUnits="userSpaceOnUse"><path d="M0 20c20-14 40-14 60 0s40 14 60 0" fill="none" stroke="${c}" stroke-opacity="0.16" stroke-width="1.6"/></pattern>`,
