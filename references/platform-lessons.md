@@ -584,3 +584,84 @@ before quoting them to anyone.
 - **View `brandField: ""` is rejected** by the DTO; an empty cover is `null` (what the UI writes).
 - **Field defaults are applied by the frontend only**, and buttons cannot run `updateRecord`: rows a script seeds get
   no default values, so seed every field a list filters or groups on.
+
+## Lessons from the kindergarten rebuild (2026-10-26, develop 1e23babd, base 6adf8c9a…)
+
+- **Old bases hold mobiles and codes in Persian digits** («۰۹۱۲…»). A normaliser that strips `\D` first deletes every
+  digit and the field lands empty; convert ۰–۹ / ٠–٩ to ASCII before validating. Count filled values after an import.
+- **Monthly billing per period without a "current period" setting:** a `period` automation with `cronType:
+  "jalaliMonthly"`, cron `0 3 1 * *` (UI «ماهانه», Jalali day 1), createRecord writes `{time:today-1d}` into a native
+  date field («تاریخ دوره») and `{time:today}`/`{time:today+7d}` for issue date and deadline; both the invoice and the
+  child rows carry `timeFormat(<date>, "jYYYY-jMM")` keys (computes `1405-07`). Linking child rows to the invoice is a
+  second `period` automation (updateRecord, matchFields = link + key): a `match` trigger per new invoice exceeds the
+  loop guard (50 record-triggered runs per base per minute, `loopGuard.ts`) when one run creates dozens of invoices.
+  Prove templates with the engine's `plainValue(record, template, "query")` on a real row before activation.
+- **Seeded children through `urecords`: the parent's SUM rollup over a child formula stays 0**, because it ran before
+  the formula existed (COUNT rollups were right). Re-saving the rollup field (`updateField(id,{name,rollupField},{force:true})`)
+  recomputed all parents; edits through the normal write path afterwards kept parents right (attendance time changed →
+  invoice fee and total changed).
+- **Menu items and tabs filter by staff role** with `{filter:{andor:"and", field:"[role]", operator:"has any of",
+  operand:[roleId]}}` in `userFilter` / `userFilterTab`; the owner always passes.
+- **Form date inputs have no "today" default** (field `default` is used only by map fields; form `defaultValues` are
+  static): a daily-entry form has to ask for the date.
+- An automation SMS that reads a field the same run updates sees the trigger snapshot: compose the text from fields
+  that are already final (e.g. «مبلغ کل» + «مانده قبلی», not the «قابل پرداخت» formula over the amount being frozen).
+
+## Lessons from the «نان» rebuild (2026-10-27, base 68737a33…, develop on :3000)
+
+- **A button field's label is its `symbol`** (`cells/the-button.vue`); a button created by script without it renders as an
+  empty coloured pill. Its `description` is the confirmation text. Clicked buttons stay clickable (clicker + time shown).
+- **`is me` on a collaborator field holding several users ("a,b") matches nothing**; use `has me`. A unit portal built on
+  `is me` had never worked for any unit with two managers.
+- **A field limit with an empty `error`** makes every save of that row stall on «در حال ذخیره سازی» with no message, in
+  forms and record dialogs alike; `urecords` imports fail with the generic «خطا در بروزرسانی سطرها». Give every limit a message.
+- **Condition groups: `children` uses the top-level shape** (`[{filter:{…}}, {filter:{andor:"or",…}}]`, `utils/filter.js`
+  recurses); bare filter objects inside `children` evaluate false. For one select field prefer `is any of`.
+- **Script uploads (`uploadBase64` with table+record) are served from `<S3>/<bucket_prefix>thumbnails/<key>`**, not
+  `/cloud-uploads/<key>`: probe that path before calling an image missing.
+- **Collaborator-only access holes hide behind owners**: when every collaborator is an owner, owner-only tables and
+  roles without field access look fine. Test with a non-owner account of each role (cuser `sendSms:false`).
+- **Test sessions without a password**: `User.createSessionToken(remember, ip, ua, host, ctx)` from a script returns the
+  JWT; write it to `.auth/<role>.token` (600) and inject `localStorage.token` with Playwright `addInitScript`. A portal
+  user needs only a User document (`cuser` then `duser` creates one without base membership).
+
+### Learned on the «نان» gap round (2026-10-29)
+- **An empty lookup is `""`, not null**: `coalesce($lookupA$, $lookupB$)` never falls through to B. Use `if(len($A$) > 0, $A$, $B$) . ""`
+  (independent ideas reached no unit for two days because of this).
+- **Formula `timeFormat($createdtimeField$, "jYYYY")`** gives the Jalali year (codes like `NAN-1405-1015`).
+- **List `filterType:"join"` is `contains`**: the list's field must contain the record's field. Overlap of two multi-selects is not
+  expressible; build `"#a#b#"` keys (`"#" . replace($multi$, ", ", "#") . "#"`) and match one `"#x#"` subject.
+- **Buttons can only set select fields** (`doneProcess` on any singleSelect, several actions per button): a «seen» flag is a select, not a checkbox.
+- **COMMENTS block** is hidden from portal users unless `details.showGust:true` (+ `gustName` = field naming the guest); messages load
+  only when scrolled into view; portal users see collaborators as «ناشناس».
+- **A `mobile` field with `notify:true`** shows only «درج موبایل من» (no input): an anonymous form cannot fill it. New/converted
+  primary fields may carry it — set `notify:false` for public forms.
+- **Rollup of a rollup computes** (idea → need SUM → unit SUM) on the next write.
+- `crawl-lists.cjs` clicks `.q-tab` only: lists in later tabs of page TABS blocks may not be counted — check them by hand.
+
+## Lesson from the kindergarten build (2026-10-30, develop)
+
+- **Record actions written by script must carry the editor's field cards, or the editor shows them empty.** The engine reads
+  only `options.record` (`modifyRecord.ts create/update`), so an action with values only there runs, but the automation
+  editor draws one card per entry of `options.fields` (createRecord: `{id, name, value, type, config, possibleValues?}`)
+  or `options.updateFields` (updateRecord: `{value, label, text, type, config, update: true, possibleValues?}`) and shows
+  «انتخاب فیلد» with no cards; a user who opens and saves it can drop the values. Write both: a template
+  (`{record:…}`/`{time:…}`) or any text/longText value is `config:"dynamic"` with the template also in the card
+  (`value` / `text`); a fixed value is `config:"static"` with an empty card value and the value only in `record`
+  (cloud-front `CreateRecordAction.vue`, `UpdateRecordAction.vue`). The kindergarten build's `verify-automations.ts`
+  checks every record value has its card.
+
+## Lessons from the SRM feedback round 2 (2026-11-02, base 6aa7a81d…)
+
+- **`has my mobile` on a rollup inside an OR group builds an invalid search** (`… OR )`): `runQuery` returns undefined and the list fails, instead of the usual silent drop. Wrap the rollup in a formula (`coalesce($rollup$, "")`) and filter on that. Test a new portal filter through `filterExpression` + a real query, with a supplier who is not invited as the negative control.
+- **A portal list's search box is hidden by the block key `viewFilterbar:"invisible"`**, which no editor writes any more. Leave the key out and the box appears; search works for portal users when the view has `freeSearch:true`. `H.keepLiveDefaults`-style merges bring a removed key back: do not run them over a block you are stripping.
+- **Renaming a field re-saves it** (`ufield` → `notify(table,[field],[],{},"design")`), which recomputes its lookups on child rows. Where an active automation watches such a lookup, add a small formula field for the new label instead of renaming.
+- **Fake-empty test data hides a whole feature:** a demo whose deals have ended shows every open list empty. Note the demo's expiry date in the hand-over and re-check it before each customer review.
+
+### Colleague review of the «نان» site (2026-11-03)
+- **Site footer has no width setting** (`SideFooter.vue`: full-bleed container, column widths in %). To match the page content add empty side columns
+  (`{width:6, widgets:[]}`), `gap:16`; keep menus to about 6 lines by splitting long link lists into two columns.
+- **A TABS header cannot be centred**: for a centred layout use two sections with centred titles instead.
+- **SECTION `justify:"center"` centres a STATS block inside it**; several items in one STATS block make one row. The stat card chrome cannot be removed.
+- **Line patterns can still be "busy" at PATTERN_STRENGTH 0.55** on content-heavy portals: `pattern:"plain"` keeps only the wash and corner circles.
+- **`keyboard_arrow_down` text / page wider than the viewport on a local dev server** means the Material Icons font failed to load there (ExpandItem arrow), not a layout bug: clip `.material-icons` and re-measure before "fixing" the page.
