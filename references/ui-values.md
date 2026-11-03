@@ -63,6 +63,7 @@ After every build round, run `scripts/ui-values-lint.ts`. It must report `0 valu
 | updateRecord action `options` | `maxRecords` | Leave it out (no editor; the engine default is 10000) |
 | updateRecord `matchFields[]` | `label` | `{value, text, type, config}` only |
 | action token | `{time:today+4d}` | A token-menu preset: now, today, clock, today±1d, now+1h, today+7d, today\|jalali, today\|gregorian, epoch. Otherwise ask the owner. |
+| side `default` | `true` on a second side | One default side per base, the public site when there is one. `updateSide(id, { default: true })` unsets the others, like the settings page. |
 | automation `cronType` | anything else | `jalaliMonthly`, `monthly`, `weekly`, `hourly` (ScheduleTrigger.vue) |
 
 Images inside TEXT HTML (`<img src="data:…">`) are fine. The text editor keeps pasted images inline and round-trips them.

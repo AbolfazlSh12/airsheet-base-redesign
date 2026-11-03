@@ -836,7 +836,7 @@ Other gallery `layout[0]` keys:
 - `layoutType`: `website` or `sidebar`.
 - `header` and `footer` are **JSON strings**.
 - `pagesOrder: [pageId]`: the first page is the landing page when the URL has no page.
-- `default`: this side is the base's landing side.
+- `default`: this side is the base's landing side. **Exactly one side per base**, and the public site (`visitor`) when the base has one. `cbase` makes the team side default, so setting the site default must also unset that one: `lib.ts` `updateSide` does this, as the settings page does. Never put `default: true` in a step that can re-run, or it takes the default back from the site. The server does not enforce one default; with two, `Side.findOne` picks either, and `getBaseId` decides `loginRequired` from it.
 - `userRole`: for `user` sides.
 
 ### 7.1 Website header: `organisms/SideHeader.vue`

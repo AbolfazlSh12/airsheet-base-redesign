@@ -76,6 +76,10 @@ L.run(async () => {
     if (String(e.layout?.background?.value || "").startsWith("data:")) hit(`template ${t.name}/${e.name}`, "background data: URI");
   }
 
+  const sides = await L.listSides(), defaults = sides.filter((s: any) => s.default === true);
+  if (defaults.length !== 1) hit("sides", `${defaults.length} default sides (${defaults.map((s: any) => s.name).join(" + ")}); the settings page keeps exactly one`);
+  if (sides.some((s: any) => s.type === "visitor") && !defaults.some((s: any) => s.type === "visitor")) hit("sides", "the base has a public site but it is not the default side");
+
   const autos = new Map((await L.listAutomations()).map((a: any) => [String(a._id), a]));
   for (const x of (await L.M.Action.find({ base: L.BASE }).lean()).map(L.parse)) {
     const a: any = autos.get(String(x.automation)), w = `automation ${a?.name ?? x.automation}/${x.type}`;

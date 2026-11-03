@@ -336,6 +336,9 @@ export async function updateSide(id: string, patch: any, opts?: Opts) {
   await assertIds(M.Page, patch.pagesOrder, "page of this side", { side: id });
   const p = enc(patch);
   if (typeof patch.default === "boolean") p.default = patch.default; // a side's «default» is a Boolean, not a JSON string
+  // One default side per base: the settings page unsets the current one first (cloud-front composables/sides.js) and the
+  // server keeps no such rule, so a second default stays and Side.findOne picks either for the login gate.
+  if (patch.default === true) for (const s of await M.Side.find({ base: BASE, default: true, _id: { $ne: id } }).lean()) await updateSide(String(s._id), { default: false }, opts);
   return change("side", id, before, p, () => call("uside", { base: BASE, _id: id, ...p }), () => getSide(id), opts);
 }
 
