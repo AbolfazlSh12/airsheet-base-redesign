@@ -31,7 +31,7 @@ const ACCOUNTS = fs.existsSync(accFile) ? JSON.parse(fs.readFileSync(accFile, 'u
   // («محدودیت تعداد نشست های همزمان»), so logging in on every run locks the account out.
   let needLogin = !!ACCOUNTS[role];
   if (needLogin && fs.existsSync(stateFile)) {
-    await page.goto(`${FRONT}/home`); await page.waitForTimeout(2500);
+    await page.goto(`${FRONT}/home`); await page.waitForURL(/\/auth/, { timeout: 10000 }).catch(() => {}); // 2.5 s let a slow load pass a dead session
     needLogin = page.url().includes('/auth');
   }
   if (needLogin) {
