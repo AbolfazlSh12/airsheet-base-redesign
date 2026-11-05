@@ -31,15 +31,15 @@ L.run(async () => {
 ```bash
 cd <cloud-back checkout>
 DRY=1 npx tsx my_step.ts   # print the diff lines only; Mongo, Splunk and changes.log are not touched
-npx tsx my_step.ts         # apply the change, append to changes.log, then wait SETTLE_MS (default 20000) before exiting
+npx tsx my_step.ts         # apply the change, append to changes.log, then stay alive for the cascades before exiting
 ```
 
-- **`L.run(fn)`**: connects Redis (the CLAUDE.md rule), then Mongo. It runs `fn` and waits `SETTLE_MS`, so the debounced `notify` effects (formula, links, joins, autonumber) finish before the process exits. Always wrap your script in it.
+- **`L.run(fn)`**: connects Redis (the CLAUDE.md rule), then Mongo. It runs `fn` and stays alive so the debounced `notify` effects (formula, links, joins, autonumber), which run in this process, finish first: 120 s after any record or field write, 20 s otherwise. Effects still running at exit are lost for good (`platform-lessons.md` «Recompute cascades»). Always wrap your script in it, and count the deepest table after a heavy step.
 - **Environment variables**:
   - `DRY=1`: print only.
   - `AIRSHEET_BOOTSTRAP=1`: load without a base id, only to run `createBase` (`build-new-base.md`, B0).
   - `ALLOW_LIVE=1`: override the guards against SMS, email and API calls (see below).
-  - `SETTLE_MS`: how long `run` waits before exiting.
+  - `SETTLE_MS`: overrides that wait. Re-saving lookup fields needs minutes per hop.
 - **Mutator signature**: every mutator takes an explicit id first, which is the target, or the parent for creates. It takes a `patch` second and optionally `{ force: true }` third. It returns the doc read back after saving, in parsed form.
 - **Creates are idempotent by name** for tables, fields, views, roles and sides: an existing one is returned with `= kind «name» exists`. Pages, expand templates, automations, actions and user/record roles are not.
 - **`countRecords(table)`**: live rows in a table (Splunk).

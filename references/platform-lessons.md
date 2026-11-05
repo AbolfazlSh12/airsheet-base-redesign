@@ -552,23 +552,49 @@ before quoting them to anyone.
   starts it on another page, left two periods unopened for days («nothing happens after 30 minutes»). Put the next
   step next to the form; hide the start button while another period is open.
 
-## Recompute cascades (verified 2026-10-26, PM base, ~5,000 dependent rows)
+## Recompute cascades (measured 2026-11-05, PM base, 5,435 dependent rows)
 
-- **A changed lookup source does not reach every dependent row.** After the units' observer formula changed (new
-  centre / vice-president mobiles), lookups of it on programs, activities and period rows stopped at ~25 % and stayed
-  there (14 min, no progress). The same happens when someone moves a mobile between «کاربران» rows: users then see
-  part of their data (reported as «مدیر مرکز فقط یک برنامه می‌بیند، داشبوردها تقریباً خالی»). **Fix:** re-save each
-  dependent lookup field (`updateField(id, {name}, {force: true})` → `ufield` re-runs its join for every row and
-  recomputes the table's formulas); hop by hop (parent table first), with a wait between hops. Full in ~2 min.
-- **Effects of a script's writes run inside the script process** and die at `process.exit` after `SETTLE_MS`: a
-  cascade over thousands of rows was cut off half-way. Give heavy steps a long `SETTLE_MS`, or make the triggering
-  write through the server (REST PATCH), whose process outlives the request.
+The platform reaches every row. An earlier version of this section said lookups stop at ~25 % and need re-saving: that
+was wrong, and it was this skill's own scripts dying mid-cascade.
+
+- **How it works:** a write calls `notify` → `distributedDebounce` (1 s, the key lives in Redis, shared across processes)
+  → formula, chain and join effects run **in the memory of the process that wrote the row**. No durable queue, no retry;
+  errors are only logged.
+- **The server finishes.** A quiet server edit (REST or the UI's `updateCell`) reached all 5,435 rows in
+  under 54 s, and undoing it took under 59 s. A scratch chain of 3,000 rows was also fine under rapid edits.
+- **A process that exits loses its own cascade for good** (3 of 3 runs): write through a script, exit, and the rest is
+  never done. That is what looked like a platform stall. Keep the process alive (`lib.ts` now waits 120 s after any record
+  or field write, `SETTLE_MS` overrides), or write through REST so the server's process carries it. Count the deepest
+  table afterwards.
+- **A server restart mid-cascade loses work the same way**, by the code; not tested.
+- **Do not change schema while someone enters data.** One colleague's stall happened during a build's schema work (likely interference, unproven); it
+  could not be settled afterwards: the platform purges old record versions (~1.3 versions per row remain).
+- **Repair, not routine:** when a cascade really was lost, re-save each field of the chain, parents first
+  (`updateField(id, {name}, {force: true})` re-runs its join for every row and recomputes that table's formulas), hop by
+  hop with a wait. About 30 min for five hops on 5,435 rows; give the run a timeout longer than that, and make hops resumable
+  (`FROM_HOP`): a `timeout` killed one run before its last hop and 377 rows stayed stale.
 - **Rows created with `importRows` + `bulkUpsert` do not update their parents' rollups** (a CONCATENATE of a
   new user's mobile stayed empty): `updateRecord` the child once (`force`) afterwards.
 - An empty numeric-ish rollup reaches formulas as `0` (fillnull): `if(isnull(x),"",mvjoin(x,","))` returns `"0"`.
   Harmless inside a mobile scope (no mobile contains "0" as a whole), but visible.
 - A side's `default` is a Boolean (`uside`); `lib.ts` encodes `default` as a JSON string for fields, so
   `updateSide` now passes a Boolean `default` through unchanged.
+
+## Lessons from a colleague's structural review (2026-11-04, PM base; the rules are in `structure-rules.md`)
+
+- **A `user` side with no `accreditView` means login only**; with one, only the collaborator of type owner skips the check. `uside` accepts `type`, `userRole`, `default` and `pagesOrder`, so a side can be converted in place.
+- **The group field must be in `view.fields`**, or its values never reach the client. Only one group level exists.
+- **The 1000-row limit:** the client loads 1000 rows (`pageLength`, `head N` in search.ts; the server's `pageNum` is unused)
+  and groups client-side, so counts summing to exactly 1000 mean truncation. A row costs about 3.5 KB (5,435 rows = 17–19 MB).
+- **`filterType:"join"` compares with «contains» on a string**, so the out field must be a plain text formula
+  (`mvindex(x,0) . ""`). It spares writing link fields on thousands of rows. Dashboards and Gantt inside record templates
+  honour block context filters (tested).
+- **A VIEW block may carry `defaultValues`** (`{fieldId:[{_id,primaryFieldValue}]}`, tested for a link); a form's layout has
+  its own `defaultValues` for selects; `formIn` with `autoLinkField` fills the parent in a record context.
+- **The ExpandRecord mask is client-side only:** the profile view must itself be scoped with `has my mobile`, or every
+  user's row is served to everyone.
+- **`deleteConstraint`** exists (`L.deleteConstraint`). REST `/v0/<base>/<table>/<id>`: encode the segments separately; the
+  token works across this owner's bases.
 
 ## Lessons from the «اداره امنیت» visual redesign (2026-10-22, base 6874edc7…, 21 sides)
 

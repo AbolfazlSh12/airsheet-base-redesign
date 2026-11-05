@@ -59,6 +59,7 @@ export const LOG = process.env.CHANGES_LOG ?? P.changesLog ?? `${__dirname}/chan
 const DRY = process.env.DRY === "1";
 const ALLOW_LIVE = process.env.ALLOW_LIVE === "1";
 const SETTLE_MS = Number(process.env.SETTLE_MS ?? 20000);
+let dataWrites = 0; // writes whose effects (formula, chain, joins) run in this process and die at exit
 type Opts = { force?: boolean };
 
 // ---------- JSON-string fields ----------
@@ -149,6 +150,7 @@ async function change(kind: string, id: string, before: any, patch: any,
   const line: any = { ts: new Date().toISOString(), kind, id, diff };
   if (DRY) { console.log("DRY " + redact(line)); return parse({ ...before, ...patch }); }
   let r: any;
+  if (/^(record|field)/.test(kind)) dataWrites++;
   try { r = await apply(); if (typeof r === "string") line.created = r; }
   catch (e: any) { line.error = e?.message; throw e; }
   finally { fs.appendFileSync(LOG, redact(line) + "\n"); }
@@ -195,7 +197,10 @@ export async function run(fn: () => Promise<void>) {
     await getDBConnection();
     await fn();
   } catch (e: any) { console.error("ERR", e?.message); process.exitCode = 1; }
-  if (!DRY) await new Promise((r) => setTimeout(r, SETTLE_MS));
+  // ponytail: a fixed wait, the effects expose no "done" signal. 120 s covers a plain cascade over ~5000 rows;
+  // re-saving lookup fields takes minutes per hop, so set SETTLE_MS yourself and count the deepest table afterwards.
+  const settle = process.env.SETTLE_MS ? SETTLE_MS : dataWrites ? Math.max(SETTLE_MS, 120000) : SETTLE_MS;
+  if (!DRY) { if (dataWrites) console.log(`${dataWrites} record/field write(s): staying alive ${settle / 1000} s for their cascades`); await new Promise((r) => setTimeout(r, settle)); }
   process.exit(process.exitCode ?? 0);
 }
 
@@ -275,6 +280,13 @@ export async function upsertConstraint(tableId: string, constraint: any, opts?: 
   return change("table.constraints", tableId, before, enc({ constraints: next }),
     () => call(i < 0 ? "createConstraint" : "updateConstraint", { table: tableId, constraint: JSON.stringify(constraint) }),
     () => getTable(tableId), opts);
+}
+
+export async function deleteConstraint(tableId: string, id: string, opts?: Opts) {
+  const before = await own(M.Table, tableId, "table");
+  const next = (before.constraints || []).map(tryParse).filter((c: any) => String(c.id) !== String(id));
+  return change("table.constraints", tableId, before, enc({ constraints: next }),
+    () => call("deleteConstraint", { tableId, id }), () => getTable(tableId), opts);
 }
 
 // ---------- fields ----------
@@ -677,6 +689,7 @@ export async function seedRows(tableId: string, rows: any[]) {
   }
   const line: any = { ts: new Date().toISOString(), kind: "records.seed", id: tableId, diff: { rows: { from: null, to: rows } }, created: ids.join(",") };
   if (DRY) { console.log("DRY " + redact(line)); return rows; }
+  dataWrites++;
   let manifest: any = {};
   try { manifest = JSON.parse(fs.readFileSync(MOCK_MANIFEST, "utf8")); } catch { /* first seed */ }
   const known = new Set((manifest.rows ?? []).map((r: any) => r.id));
