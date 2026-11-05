@@ -111,6 +111,9 @@ five dashboard tabs were empty for both portal users — readable mock ids broke
   («در حال ذخیره‌سازی / ذخیره شد» on every open) to write into the step; `build/quiet-layouts.ts` writes the known mount
   defaults into pages and templates.
 
+- `npx tsx build/structure-lint.ts` with `DRY=1` (`structure-rules.md`): 0 errors, and every warning fixed or written down in
+  the decision list. `JOB_TABLES=` names the tables a job fills.
+
 ## 6. Change safety
 
 - `DRY=1` diff read by the agent before every real run; `changes.log` holds `{kind,id,diff:{from,to}}` so any line can
@@ -120,3 +123,15 @@ five dashboard tabs were empty for both portal users — readable mock ids broke
   completion report lists each closed gap with the dump evidence (object name/id) that proves it landed.
 - A teammate's concurrent edits show up as unexplained diffs: find the actor in `index=behavior` before reverting.
   A deliberate UI edit (renamed tab, page size, record title) is written into the step, not reverted.
+
+## 7. Testing a branch or a role against the test server
+
+- Local :3000/:9003 may run someone's other checkout, with a captcha at login. Do not use them, do not bypass the captcha,
+  and do not boot a local backend: its worker attaches to the shared Redis.
+- Tunnel to the deployed front and back, `ssh -p <port> -f -N -L 9103:localhost:80 -L 3100:localhost:3000 <user>@<test server>`,
+  then Playwright with the system Chrome and `.auth/<role>.json` with its origins rewritten to the tunnel, plus a context
+  route `http://127.0.0.1:3000/**` → :3100. A front from a branch: route `/api/**` → :3100, with a shim for any argument the
+  deployed back does not know yet.
+- Sections that depend on the viewer's role, with no account per role: rewrite the row's value in responses
+  (`/([0-9a-f]{24}\\*":\\*")VALUE/g`) and shoot each. Real accounts remain the final proof: say which you did.
+- Never print cookies or tokens; a tool error once echoed a session cookie, and the owner had to log out and in again.

@@ -14,7 +14,9 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 
 ---
 
-## 0. The 34 rules. Read these even if you read nothing else
+## 0. The 34 page rules. Read these even if you read nothing else
+
+`structure-rules.md` holds the rules about what a base should contain; these are about how its pages render.
 
 1. **Blocks sit 4 px apart.** The block list is a `flex-wrap gap-1` (`NotionViewer.vue`, draggable class `tw-gap-1`), so vertical rhythm has to come from you. Use SECTION `padding`, TitleDivider (it has `my-4`), or inline `margin` inside TEXT HTML.
 2. **Style everything in TEXT HTML inline**:
@@ -97,7 +99,8 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
     `featured` cards print values **without labels**: give them only self-explanatory fields (title, status chip, date,
     a person's name). A bare figure or code («12», «A», a reservation number) needs a labelled view: Grid or
     `cardsHorizontal`. A `featured` card with an image beside the text needs `featuredSize:"lg"`; `md` squeezes the
-    text into one-word lines. A Grid with `groups` on a portal shows only collapsed group headers: sort instead.
+    text into one-word lines. A Grid with `groups` opens on collapsed group headers with counts: right for walking a hierarchy (structure rules B3),
+    wrong for a queue that must show its rows at once, which should sort instead. The group field must be a column (C1).
 30. **Galleries get covers.** Set `brandField` on every Gallery whose records have an image or can get one through a lookup
     (an item photo on a request line, a building photo on a room), and seed an image on every row (§11 #5). If the table has
     no natural image, choose a non-gallery type (rule 29) rather than leave grey boxes.
@@ -781,7 +784,8 @@ Storage (`cloud-back/src/modules/database/models/View.ts`, and `cloud-back/src/m
 | Card cover image | `brandField: <attachments field>` | Gallery image carousel, 140 / 200 px. If set but the record has no file, you get a **grey placeholder box** — so when you set a cover (customers expect one on every gallery), guarantee an image on every row: the table's own image field, a lookup of a parent's image (e.g. the linked company logo), or a per-category illustration |
 | Gallery look | `layout: "[{…}]"` with `layout[0].type` | See below |
 | Sort | `sorts: ["{\"field\":…,\"direction\":\"AZ\"}"]` | |
-| Grouping | `groups: ["{\"index\":0,\"field\":…,\"direction\":\"AZ\",\"collapse\":false,\"stats\":[]}"]` | |
+| Grouping | `groups: ["{\"index\":0,\"field\":…,\"direction\":\"AZ\",\"collapse\":false,\"stats\":[]}"]` | One level. The field must be in `fields`; 1000-row limit (`visual-kit.ts` `groupOn`, `gridLook`) |
+| Grid column widths, headers | `layout[0][fieldId]=px`, `theme:{wrapHeaders:true}` | Cell wrap does not exist |
 | Records filter | `filters: "[filter…]"` | |
 | Row / card colour | `conditionalColors: "[{id,enabled,color,conditions}]"`, where `color` ∈ `blue…gray`, `blue2…gray2`, `base-100` | Card background in Gallery, `getRecordCardStyle`. First match wins |
 | Search fields | `summaryFields: "id1,id2"` | Filter chips in the filterbar (`inline-filter`). Keep 0–2 on portal lists |
@@ -836,7 +840,7 @@ Other gallery `layout[0]` keys:
 - `layoutType`: `website` or `sidebar`.
 - `header` and `footer` are **JSON strings**.
 - `pagesOrder: [pageId]`: the first page is the landing page when the URL has no page.
-- `default`: this side is the base's landing side. **Exactly one side per base**, and the public site (`visitor`) when the base has one. `cbase` makes the team side default, so setting the site default must also unset that one: `lib.ts` `updateSide` does this, as the settings page does. Never put `default: true` in a step that can re-run, or it takes the default back from the site. The server does not enforce one default; with two, `Side.findOne` picks either, and `getBaseId` decides `loginRequired` from it.
+- `default`: this side is the base's landing side. **Exactly one side per base**: the public site (`visitor`) only when anonymous visitors really exist; when everyone has an account, a `user` side behind login (§10.9). `cbase` makes the team side default, so setting the site default must also unset that one: `lib.ts` `updateSide` does this, as the settings page does. Never put `default: true` in a step that can re-run, or it takes the default back from the site. The server does not enforce one default; with two, `Side.findOne` picks either, and `getBaseId` decides `loginRequired` from it.
 - `userRole`: for `user` sides.
 
 ### 7.1 Website header: `organisms/SideHeader.vue`
@@ -870,7 +874,7 @@ Other gallery `layout[0]` keys:
 - **Recommendation**:
   - Every side gets the customer logo and a short name.
   - `hoverColor` `var(--blue4)`.
-  - On the visitor site, a dynamic button (e.g. «ورود تأمین‌کنندگان») → the logged-in portal, with `hideAfterLogin:true`.
+  - On a public site (only when anonymous visitors exist, §10.9), a dynamic button (e.g. «ورود تأمین‌کنندگان») → the logged-in portal, with `hideAfterLogin:true`.
   - `headerMode:1` can squeeze the menu to half the free width and clip items at 1366 px; `headerMode:2` (menu next to the logo) showed all items. Screenshot to decide.
 - Logo keys already uploaded in the old base's sides are reusable storage keys.
 
@@ -1089,7 +1093,7 @@ There is no count-based conditional in pages, and Gallery `cards`/`featured` ren
 - Where creation is allowed (`newable` access with `newForm`), the gallery's own «+ جدید» tile acts as the empty-state call to action.
 - Grid shows «رکوردی یافت نشد», Calendar shows «رکوردی نیست», and ExpandRecord shows `view.no_records_found`.
 
-### 10.6 Public landing (visitor side)
+### 10.6 Public landing (visitor side, only when anonymous visitors exist; otherwise §10.9)
 ```json
 {"name":"","maxw":"tw-max-w-6xl","cover":"","blocks":[
  {"id":"hero","type":"TEXT","details":{"value":"<div style=\"background-color:#124f7d;color:#fff;border-radius:24px;padding:48px 36px;margin:12px 0\"><div style=\"display:flex;align-items:center;gap:12px;margin:0 0 18px\"><img src=\"<site-relative logo path>\" alt=\"\" style=\"height:40px;width:auto;background-color:#fff;border-radius:10px;padding:4px\"><span style=\"font-size:14px;font-weight:600;opacity:.9\">«نام سازمان»</span></div><div style=\"font-size:34px;font-weight:800;line-height:1.4;margin:0 0 12px\">سامانه ارتباط با تأمین‌کنندگان</div><div style=\"font-size:16px;line-height:2;max-width:640px;opacity:.92\">ثبت‌نام، شرکت در معاملات، قراردادها و درخواست‌ها — یکجا و آنلاین.</div></div>"}},
@@ -1116,6 +1120,22 @@ Then a full-width Kanban (page `maxw:"tw-max-w-full"`, with the other content in
 
 ### 10.8 Help / FAQ page
 A TEXT header, then TABS by topic. Each tab holds ExpandItem blocks (a question as `title`, a TEXT answer inside). Add a FileBlock of downloadable guides and a final ALERT with contact information.
+
+### 10.9 One address for every role: a guest home behind login
+
+No core code is needed, and this is the default when every user has an account. Tested on 2026-11-04 by rewriting the role
+in responses for five roles; a real login per role is still the final proof.
+
+1. A Grid of the people table for accreditation, unfiltered («کاربر سامانه (مجوز)»); a user role on it with `accreditView`,
+   `accreditField` = mobile, `usernameField`, `userProperty:"mobile"`.
+2. A one-row Gallery «پروفایل من» whose **own filter** is `has my mobile`, `pageSize:1`. The block's mask is client-only.
+3. An expand template on the people table with `sides:[home]`, `defaultSides:[home]`, one SECTION per role, each with
+   `filter` on the role field (§4.24; record context makes it work), holding a greeting, a read-only RECORD of name and post,
+   and a MENU tile (`linktype:"page"`, `side`, `path`) to that role's portal.
+4. The home side: `type:"user"`, `userRole`, `default:true`. Its page holds one block:
+   `{type:"ExpandRecord", details:{value:{value:<profile view>, expandTemplate:<template>, profileAccreditField:<mobile>, profileCondition:"has my mobile"}}}`
+   (what «صفحه ساز پروفایل» creates). Test the sections by rewriting the row's role value in responses
+   (`verification.md` §7) when you have no account per role.
 
 ---
 

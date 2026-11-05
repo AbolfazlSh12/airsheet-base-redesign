@@ -87,7 +87,8 @@ For a large base, split the work across agents with disjoint ownership under one
   every form submitted once per portal.
 - **Look**: screenshots per role, desktop, `MOBILE=1` and `THEME=dark` (`shot.cjs`); record dialogs per template
   (`shot-record.cjs`); no empty list (`crawl-lists.cjs`).
-- **Static checks**: `dump-base.cjs` + `lint-base.cjs` with 0 errors; `check-constraints.ts` with every rule working.
+- **Static checks**: `dump-base.cjs` + `lint-base.cjs` with 0 errors; `check-constraints.ts` with every rule working;
+  `structure-lint.ts` with 0 errors and its warnings answered; `page-lint.ts` and `ui-values-lint.ts` at 0.
 - **Against the document**: the gap audit (`gap-audit.md`) is the done-gate. Close what configuration can close
   before B3.
 
@@ -101,6 +102,8 @@ The completion report (Persian):
 - the decision list with the defaults used, for the customer to confirm;
 - the go-live list: remove mock rows and test accounts, activate automations with test providers first, cutover
   (flow 1, O8), hand ownership to the customer's account, rotate any key that was ever in plain text.
+
+And the usage guide, per role (`demo-readiness.md` D11): a change log is not a guide.
 
 Then: the product-feedback file for the Airsheet team, the final `memory.md` entry, and any new general lesson into this
 skill's `platform-lessons.md`.

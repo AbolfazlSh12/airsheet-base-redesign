@@ -15,6 +15,8 @@ diagnosis of the old base (`data/diagnosis.md`).
    they may see, create, edit and delete per table; the portal (side) they use. Write the row-level rule that limits a
    portal user to their own rows (a `has my mobile` filter, a record role, a user role with `accreditView`). Never share
    one view between staff and a portal: plan a portal copy (`platform-lessons.md`, «Access model»).
+   **Who defines what:** one row per table: who creates it, who edits it, on which page, what must exist first; how a new
+   person connects to their work; what happens at a new year (`structure-rules.md` A4). It goes into the usage guide as is.
 3. **Data model.**
    - Tables: name, purpose, primary field (what a row is called inside a link), expected row count, requirement ids.
    - Fields per table: name, type, options with colours, required, default, validation (field limits, table
@@ -28,7 +30,8 @@ diagnosis of the old base (`data/diagnosis.md`).
    calls. Read «Engine facts» in `platform-lessons.md` first: `update` never fires on create, action conditions see the
    snapshot at trigger time, `cron` gets an empty record. All are created **inactive**; list the activation checklist.
 5. **Roles and portals (sides).** For every side: type (collaborator / user / visitor), who gets in (roles, user role,
-   accredit view or form), layout (header or sidebar), menu items, and the pages behind them.
+   accredit view or form), layout (header or sidebar), menu items, and the pages behind them. Name the default side and
+   why: a public site only if anonymous visitors exist (`structure-rules.md` D1).
 6. **Pages and modules.** Group the base into modules (a business area such as «درخواست‌ها», «قراردادها», «گزارش‌ها»).
    For each page: audience, purpose, the blocks it holds (hero, KPIs, lists with their views and filters, forms,
    actions), and the expand template a row opens in. Follow the shells in `design-guide.md`; no list may be empty for a
@@ -38,7 +41,8 @@ diagnosis of the old base (`data/diagnosis.md`).
 8. **Notifications.** Who is told what, when, through which channel (in-app, SMS, email), and how duplicates are
    prevented.
 9. **Reports and dashboards.** KPIs (with their filters per audience: portal KPIs count only the user's rows), charts,
-   exports.
+   exports. Per role: the default grain (the viewer's direct children), the drill-down path, and one line of logic per
+   computed number, saying which are provisional (`structure-rules.md` B1, B6).
 10. **Integrations.** Every external system: direction, trigger (automation REST action, or an API table in a form for
     on-demand reads), authentication, the request and response shape, and what is still unknown. Never a real endpoint
     during the build: name the mock.
@@ -69,7 +73,8 @@ Run two agents in parallel, both read-only:
 - **Platform checker**: reads `platform-lessons.md` and `design-guide.md` and hunts constructs the platform silently
   mishandles (filters the query builder drops, `is not` on optional fields, Grid pickers in forms, readable ids on link
   targets, dialogs with lists on user sides).
-- **Model checker** (can be the skeptic's second pass), each line found missing on a real build:
+- **Model checker** (can be the skeptic's second pass): walks every line of `structure-rules.md` against the package and
+  reports each one broken, then these, each found missing on a real build:
   - anything evaluated per period / cycle has rows keyed by period from the first design, with the inputs it depends
     on (period month, weights) copied into the row; nothing reads one global "current period" setting;
   - one definition per metric: no simple and weighted variants of the same indicator side by side unless the customer

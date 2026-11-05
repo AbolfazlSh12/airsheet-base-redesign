@@ -74,3 +74,11 @@ sentences (screenshots, "today", "say to the client", audit notes). Per page: wh
 cards, counters, shortcuts, tabs, status bar — derived from the block inventory), what the user does, which automations
 take over (plain names), and the customer's own sentences it answers. One plain-language catalogue of every automation
 (when / does / the customer's words) is the appendix. The SafarClub generator is `_src/build_07_client.py`.
+
+## D11. The usage guide is written per role, and it is not a change log
+
+A colleague asked for «توضیح تغییرات» and then said what they needed was «راهنمای استفاده». Reviewers cannot rebuild the base
+in their heads from a list of changes. The guide (Persian, PDF, about 6 pages for a base of this size): one section per role
+in order of the process (what they see first, what they do, in which order, where); the who-defines-what matrix
+(`structure-rules.md` A4); one line of logic for every computed number, saying which are provisional. Regenerate it after
+the last write. A change log, when asked for, is a separate file.

@@ -223,3 +223,15 @@ export const assertKept = (page: string, before: any, after: any) => {
   const now = offers(after), lost = [...offers(before)].filter((s) => !now.has(s));
   if (lost.length) throw new Error(`page ${page} would lose: ${lost.join(" | ")}`);
 };
+
+// Grid look (structure rules C1, C3). `docs` = the table's field documents; `widths` by field name, default by type.
+// The group field is forced into the columns: without it its values never reach the client.
+export const groupOn = (field: string) => ({ groups: [JSON.stringify({ index: 0, field, direction: "AZ", collapse: false, stats: [], expandGroups: [] })] });
+export const gridLook = (docs: any[], spec: any, widths: Record<string, number> = {}) => {
+  if (!spec.fields) return spec;
+  const fields = [...spec.fields];
+  for (const g of spec.groups || []) { const f = JSON.parse(g).field; if (!fields.includes(f)) fields.unshift(f); }
+  const doc = (id: string) => docs.find((d: any) => String(d._id) === String(id));
+  const px = (id: string) => widths[doc(id)?.name] ?? (["text", "longText", "lookup"].includes(doc(id)?.type) ? 150 : 100);
+  return { ...spec, fields, layout: [Object.fromEntries(fields.map((id: string) => [id, px(id)]))], theme: { wrapHeaders: true } };
+};

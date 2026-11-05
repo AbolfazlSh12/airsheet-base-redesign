@@ -28,7 +28,8 @@ dashboards were missing, a message the document asked for "before final submissi
 "at every level" existed at one level, and the base only worked once automations were activated. None of these were
 platform limits. They came from reading habits, which `rfp-analysis.md` replaces with a traced ledger.
 
-Always load `references/platform-lessons.md` before designing: it lists the platform behaviours that silently produce
+Load `references/structure-rules.md` before designing the model and the reports: what a base contains, as opposed to what
+the document asks. Always load `references/platform-lessons.md` before designing: it lists the platform behaviours that silently produce
 wrong results (query builder dropping conditions, `is not` dropping empty rows, automations that never fire, portal
 visibility, lossy restores…). A design that ignores them gets rebuilt. Load `references/design-guide.md` before any page,
 template or view-display decision.
@@ -95,6 +96,14 @@ template or view-display decision.
     (`references/ui-values.md`: the method and every value found so far with what to write instead). 2026-11-01: a
     link-picker rule on `[role]` (no editor offers it, never evaluated) left the owner and the receptionist with an
     empty child picker; the sweep that followed found two dozen more kinds in the same base.
+19. **Coverage is not structure.** Walk `references/structure-rules.md` in the design and before hand-over, and run
+    `scripts/structure-lint.ts`: no table or link for a singleton, hierarchy names on every period row, reports at the
+    viewer's direct children with drill-down, no flat dumps, a create form for whoever defines a table, a home chosen
+    from the actors, one line of logic per number. A base that met every requirement still failed on all of these.
+20. **"The platform can't" and "the platform stalled" are claims.** Non-negotiable 13 applies to your own diagnosis: find the
+    editor option or test on a scratch object before saying "needs core code" (a brief's 40–60 hours was three existing
+    features), and rule out your own process before blaming the platform (a script exiting early looked like a stuck
+    cascade, and this skill recorded it as fact for ten days). Do no schema work while people are entering data.
 
 ## Setting up a project
 
@@ -118,6 +127,10 @@ and `.auth/`) over with the completion package: a build whose `steps/`, `changes
 extended or proven idempotent later (the SafarClub upgrade had to rebuild `project.json` from a dump and re-derive every id).
 
 Keep a diary in `$W/memory.md` from the first hour: ids, decisions, what happened, open items.
+
+**Returning to an existing build dir:** `diff` its scripts against the skill first and copy in every lint it lacks. A build
+copied before `page-lint.ts` and `ui-values-lint.ts` existed never ran them, and their findings sat in a base called done
+(2026-11-05: 33 editor autosaves, 24 menu icon colours the picker does not offer, 379 values no editor writes).
 
 Run the TS scripts from a cloud-back checkout you own. Shared checkouts change branch under you, and once that broke
 every import mid-build:
@@ -151,6 +164,7 @@ overrides the base for one run, which is how flow 1 reads the old base.
 | `build-report.py` + `report-template.html` | a self-contained RTL HTML report (design or comparison) from a JSON |
 | `base-graph.py` | the planned base as an interactive graph (roles → portals → pages → tables, table links) + access matrix, from `design/base-graph.json`; flags unreachable tables, pages on no side, pages that list a table their audience cannot view |
 | `visual-kit.ts` | page building blocks in the look customers accepted: `pageDoc` (per-side background: wash + pattern, `PATTERN_STRENGTH`), `hero`, `info`, `heading`, `card`, `cols2`, `tabs`, `view`, `navCards`, `sideHeader`, `assertKept` (a rebuilt page keeps every view/embed/link) — design-guide rules 26, 31–34 |
+| `structure-lint.ts` | read-only lint of `references/structure-rules.md`: group field not a column, grouped list over 1000 rows, Grids without widths, flat dumps, machine columns, singletons, vague KPI labels, tabs not mirroring cards, tables nobody can create (exit 1 on errors) |
 | `new-forms.ts`, `page-lint.ts`, `quiet-layouts.ts` | post-process run last: every list with «جدید» opens its table's form; read-only lint of pages and side headers (exit 1); writes the editor's mount defaults so opening a page or template as the owner does not autosave |
 | `make-brand.py`, `attach-images.ts`, `init-project.cjs`, `preflight.sh` | placeholder brand set (mark + wordmark, shaped Persian text); photos onto records by name; rebuild `project.json` from a dump; hour-zero environment check |
 
@@ -185,7 +199,8 @@ Persian for anything the customer or the product team reads.
   objects (names + ids), the requirement ids and the document sentence, verified against a dump taken *after* the last
   write. It is what a customer asks first («این چه کار می‌کند؟») and it is the input of the next audit.
 - **Product feedback**: platform bugs and feature ideas met on the way, categorised, for the Airsheet team.
-- **Hand-over guide for the people who will run the base** (Persian, non-technical, 1–2 pages): what each role does,
+- **Usage guide per role, never a change log** (`references/demo-readiness.md` D11), with the who-defines-what matrix and
+  the logic of each number. Within it, for the people who will run the base (Persian, non-technical): what each role does,
   one mobile per role, multi-step actions spelled out («ثبت دوره» ≠ «باز کردن دوره», where each button is), what
   makes a record editable, what not to change in the editor.
 - New general platform lessons go into `references/platform-lessons.md`, so the next project benefits.
