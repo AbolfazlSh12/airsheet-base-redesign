@@ -15,6 +15,7 @@ for (const t of d.tables) {
     const r = v.report;
     if (v.type === 'Pivot2' && Array.isArray(r)) for (const x of r) for (const g of [...(x.rows || []), ...(x.cols || [])])
       if (LINKISH(F[g])) add('error', `${t.name} / ${v.name}`, `Pivot2 groups by link field «${g}»: every row lands in «-». Group by a text formula \`@{${g}} . ""\`.`);
+    if (v.type === 'Dashboard') add('error', `${t.name} / ${v.name}`, 'legacy «Dashboard» chart view: the create menu no longer offers it and users cannot make or pick one. Rebuild it as an «Intelligence» view.');
     if (v.type === 'Dashboard' && Array.isArray(r)) for (const c of r) {
       const by = (c.match(/ by (.+?) (count|Sum|Average|Max|Min|Distinct)/) || [])[1];
       if (LINKISH(F[by])) add('error', `${t.name} / ${v.name}`, `chart groups by link field «${by}»: empty. Use a text formula copy.`);

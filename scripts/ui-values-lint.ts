@@ -34,6 +34,7 @@ L.run(async () => {
 
   for (const t of tables) for (const v of await L.listViews(t._id)) {
     const w = `view ${t.name}/${v.name}`;
+    if (v.type === "Dashboard") hit(w, "legacy «Dashboard» chart view (the create menu no longer offers it): rebuild as an «Intelligence» view, repoint, deleteView");
     for (const s of (v.sorts || []).map(L.tryParse)) if (!["AZ", "ZA"].includes(s.direction)) hit(w, "sort without direction AZ/ZA (a missing direction sorts descending)");
     for (const g of (v.groups || []).map(L.tryParse)) if (g.direction === "ZA" || g.collapse === true) hit(w, "group direction ZA / collapse true (the group editor writes AZ / false only)");
     for (const l of Array.isArray(v.layout) ? v.layout : []) {

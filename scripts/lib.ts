@@ -339,6 +339,21 @@ export async function updateView(id: string, patch: any, opts?: Opts) {
   return change("view", id, before, p, () => call("uview", { _id: id, ...p }), () => getView(id), opts);
 }
 
+// Refuses while any page, expand template, side, table layout or field (linkView / linkForms) still names the view:
+// repoint those first (non-negotiable 15). Used to replace a view whose type the editor cannot change (uview has no `type`).
+export async function deleteView(id: string, opts?: Opts) {
+  const before = await own(M.View, id, "view");
+  const holders = [
+    ...(await M.Page.find({ base: BASE }).lean()).map((d: any) => ["page", d.name, d]),
+    ...(await M.ExpandTemplate.find({ base: BASE }).lean()).map((d: any) => ["template", d.name, d]),
+    ...(await M.Side.find({ base: BASE }).lean()).map((d: any) => ["side", d.name, d]),
+    ...(await M.Table.find({ base: BASE }).lean()).map((d: any) => ["table", d.name, { layout: d.layout, layouts: d.layouts }]),
+    ...(await M.Field.find({ base: BASE }).lean()).map((d: any) => ["field", d.name, { linkView: d.linkView, linkForms: d.linkForms, linkViewRules: d.linkViewRules }]),
+  ].filter(([, , d]) => JSON.stringify(d).includes(id)).map(([k, n]) => `${k} «${n}»`);
+  if (holders.length) throw new Error(`deleteView «${before.name}»: still used by ${holders.join(", ")}`);
+  return change("view.delete", id, before, { deleted: true }, () => call("dview", { view: id }), async () => null, opts);
+}
+
 // ---------- sides & pages ----------
 export const getSide = async (id: string) => parse(await own(M.Side, id, "side"));
 export const listSides = async () => (await M.Side.find({ base: BASE }).lean()).map(parse);

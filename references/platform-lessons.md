@@ -202,16 +202,26 @@ before quoting them to anyone.
 
 ## Reports, validation, signatures and formulas (verified 2026-10)
 
-- **Pivot2 and Dashboard cannot group by a link field** (records, or lookup of records). `stats.ts` runs
+- **Charts are `Intelligence` views; never build a `Dashboard` view** (2026-11-10). The create menu
+  (`MenuCreateView.vue`) has the ECharts `Dashboard` type commented out: users can neither create nor choose it, and
+  Amin removed it on purpose. A build that made one (the «روند تراز روزانه» bar chart of the Eqlim trading desk
+  `6af19019…`) handed the customer a chart nobody could reproduce or edit the way the rest of the product works.
+  `uview` has no `type`, so an existing one is replaced, not converted: rename the old view, `createView(table,
+  {type:"Intelligence", name})`, write its `layout`, repoint every page/template block, then `L.deleteView(old)` (it
+  refuses while anything still names the view). `ui-values-lint.ts` and `lint-base.cjs` fail on any `Dashboard` view.
+- **Pivot2 and charts cannot group by a link field** (records, or lookup of records). `stats.ts` runs
   `stats … by <field id>`; link values are arrays (`<id>{}.primaryFieldValue`), so every row lands in one «-» group and
   charts stay empty. Group by a text formula copy (`@{اداره ثبت} . ""`), which flattens to the names. Text, formula
-  and lookup-of-text fields group fine. `lint-base.cjs` flags it.
-- **The `line` chart type rendered nothing** where `bar` with the same data worked (develop 2026-10). No other base on
-  the server used `line`.
+  and lookup-of-text fields group fine. `lint-base.cjs` flags it on legacy views; check `xAxis` yourself on Intelligence.
 - Shapes, read from existing views (re-check on your server): Pivot2 `layout:[{type:"new", reportTitle,
   rowFields:[{field}], colFields, measures:[{field, function: sum|count|avg|min|max|median, format, title}],
-  rowSubtotal:{level,label}, …}]`; Dashboard `layout:[{type, by, stats: "count"|"summary", field, aggregate:
-  "Sum"|"Average"|…, title, x, y, w, h, i, …}]`; Calendar `[{calendarType:"monthly", timeField}]`; Gantt
+  rowSubtotal:{level,label}, …}]`; Intelligence `layout:[{id:<uuid>, height:"300px", type:
+  column|bar|line|area|pie|gauge|heatmap|spider|bubble|funnel|treemap|waterfall|sankey|number, xAxis:<field id>,
+  emptyX:false, yAxisFunction: count|dc|sum|avg|max|min|median|stdev, yAxisField:<field id> (not for count),
+  sortAxis:"x"|"y", sortDirection:"ascending"|"descending", title, subtitle:"", xlabel:"", ylabel:"", legend:true,
+  stacked:false, smooth:false, withbackground:false, x, y, w (of 12), h (rows of 100 px), i, static:false, filter:[],
+  colorFromField:false, sortBasedOnField:false}]` (`ViewIntelligence.vue` `addChart` + the panel menu's mount
+  defaults; `ySeries` only for 2+ series); Calendar `[{calendarType:"monthly", timeField}]`; Gantt
   `[{startTimeField, endTimeField, titleField, colorField, zoom, …}]`; PROGRESS block `details:{stateField,
   direction:"horizontal", states:[{label, name, content:{blocks:[]}}]}` (shows every option of the select, in order).
 - **Constraints compare against other rows only** (`constraint.ts` check: filters with field operands are filled from

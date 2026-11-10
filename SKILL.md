@@ -95,7 +95,9 @@ template or view-display decision.
     never stored as an invented value. `scripts/ui-values-lint.ts` must print 0 after every round
     (`references/ui-values.md`: the method and every value found so far with what to write instead). 2026-11-01: a
     link-picker rule on `[role]` (no editor offers it, never evaluated) left the owner and the receptionist with an
-    empty child picker; the sweep that followed found two dozen more kinds in the same base.
+    empty child picker; the sweep that followed found two dozen more kinds in the same base. The same holds for whole
+    view types: charts are `Intelligence` views; the legacy `Dashboard` type is gone from the create menu and is never
+    built (`platform-lessons.md` «Charts are Intelligence views»).
 19. **Coverage is not structure.** Walk `references/structure-rules.md` in the design and before hand-over, and run
     `scripts/structure-lint.ts`: no table or link for a singleton, hierarchy names on every period row, reports at the
     viewer's direct children with drill-down, no flat dumps, a create form for whoever defines a table, a home chosen

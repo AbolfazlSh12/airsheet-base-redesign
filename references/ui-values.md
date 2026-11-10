@@ -45,6 +45,7 @@ After every build round, run `scripts/ui-values-lint.ts`. It must report `0 valu
 | role / user-role `description` | more than 31 characters | 31 characters at most (`maxlength`) |
 | view `sorts[]` | `{field, order:"asc"}` | `{field, direction:"AZ"/"ZA"}`. A missing direction sorts **descending**. |
 | view `groups[]` | `direction:"ZA"`, `collapse:true` | `direction:"AZ"`, `collapse:false`. The group editor writes nothing else; the open state is `expandGroups`. |
+| view `type` | `Dashboard` (legacy ECharts chart view, commented out of `MenuCreateView.vue`; users can neither create nor pick it) | `Intelligence` with the keys `ViewIntelligence.vue` `addChart` writes (below). `uview` has no `type`: create a new view, repoint the blocks, `deleteView` the old one |
 | Intelligence `layout[]` | no `filter`, `legend:false` | `filter: []` (otherwise its filter menu crashes), `legend: true` |
 | form `inputs[]` | `recordsSelect`, `recordsMultiple`, `recordsForm:""` | Leave them out. Their editors were removed in 4fc6bad3b. |
 | form `layout[0]` | `logo:""`, `splitBy:""` | `logo:null`; leave `splitBy` out |

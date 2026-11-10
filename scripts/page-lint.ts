@@ -5,6 +5,9 @@
 //   urlLink     side menu / MENU / GALLERYMENU / TitleDivider pointing by URL at a page of this base → linktype "page"
 //   noBg        page without `background`;  header   side without display name / logo, menu item without icon colour
 //   autosave    blocks the editor rewrites on mount (toolbar flags, TitleDivider defaults, empty nested content, splitters)
+//   gridInColumn  a Grid / Kanban / Calendar inside COLUMNS2-4: half width gives a horizontal scrollbar and uneven
+//               heights (design-guide 4.7; Eqlim home, 2026-11-10) → full-width card, or one card with TABS
+//   bareList    a list VIEW outside any SECTION card, straight on the page pattern (design-guide rule «white cards»)
 // Also prints every table's Form views (input for new-forms.ts FORMS).
 import * as L from "./lib";
 
@@ -23,8 +26,8 @@ L.run(async () => {
   for (const s of sides) pages[String(s._id)] = await L.listPages(String(s._id));
   const ids = [L.BASE, ...sides.map((s: any) => String(s._id)), ...Object.values(pages).flat().map((p: any) => String(p._id))];
   const intoBase = (u: any) => ids.some((id) => String(u ?? "").includes(id));
-  const F: Record<string, string[]> = { noForm: [], formBlock: [], urlLink: [], noBg: [], header: [], autosave: [] };
-  const walk = (bs: any[], where: string) => {
+  const F: Record<string, string[]> = { noForm: [], formBlock: [], urlLink: [], noBg: [], header: [], autosave: [], gridInColumn: [], bareList: [] };
+  const walk = (bs: any[], where: string, inCol = false, inCard = false) => {
     for (const b of bs || []) {
       const d = b.details ?? {};
       if (b.type === "VIEW" && d.value?.value) {
@@ -33,6 +36,8 @@ L.run(async () => {
         else if (LIST.includes(v.type) && (d.value.newable ?? "access") !== "denied" && !(d.value.newForm && d.value.newFormPage?.details?.value))
           F.noForm.push(`${where} ${v.type} «${v.name}» of «${v.tname}»`);
         if (d.value.viewToolbar === "visible" && TOOL.some((k) => d.value[k] == null)) F.autosave.push(`${where} VIEW toolbar flags`);
+        if (inCol && ["Grid", "Kanban", "Calendar", "Gantt", "Pivot2"].includes(v.type)) F.gridInColumn.push(`${where} ${v.type} «${v.name}»`);
+        if (!inCard && LIST.includes(v.type)) F.bareList.push(`${where} ${v.type} «${v.name}»`);
       }
       if ((b.type === "MENU" || b.type === "GALLERYMENU") && Array.isArray(d.value)) for (const it of d.value)
         if (it.linktype !== "page" && intoBase(it.url ?? it.value ?? it.link)) F.urlLink.push(`${where} «${it.label}»`);
@@ -42,10 +47,10 @@ L.run(async () => {
       }
       for (const k of ["column1", "column2", "column3", "column4", "section"]) if (b[k]) {
         if (!(b[k].content?.blocks || []).length) F.autosave.push(`${where} empty ${b.type}.${k}`);
-        walk(b[k].content?.blocks, where);
+        walk(b[k].content?.blocks, where, inCol || k !== "section", inCard || k === "section");
       }
       if (/^COLUMNS[234]$/.test(b.type)) for (let i = 1; i < +b.type.slice(-1); i++) if (b[`column${i}`]?.splitter === undefined) F.autosave.push(`${where} ${b.type} splitter`);
-      if (b.type === "TABS" && Array.isArray(d)) for (const t of d) { if (!(t.content?.blocks || []).length) F.autosave.push(`${where} empty tab`); walk(t.content?.blocks, `${where}>${t.label}`); }
+      if (b.type === "TABS" && Array.isArray(d)) for (const t of d) { if (!(t.content?.blocks || []).length) F.autosave.push(`${where} empty tab`); walk(t.content?.blocks, `${where}>${t.label}`, inCol, inCard); }
     }
   };
   for (const s of sides) {

@@ -16,10 +16,10 @@ its ledger.
    ```bash
    node build/dump-base.cjs <baseId> data/dump-<date>.json && node build/lint-base.cjs data/dump-<date>.json
    ```
-   The dump shows menu role filters (`who`), form inputs (REQ/HIDDEN/COND), Pivot2/Dashboard layouts, tab role filters,
+   The dump shows menu role filters (`who`), form inputs (REQ/HIDDEN/COND), Pivot2/Intelligence layouts, tab role filters,
    field limits, constraints, action recipients. If the dump lacks something, query Mongo read-only before you claim it
    is missing. An earlier dump hid the menu role filters, and the audit wrongly reported "menus not role-based".
-2. Counts that expose gaps immediately: views per type (zero `Pivot2`/`Dashboard` while the document asks for charts),
+2. Counts that expose gaps immediately: views per type (zero `Pivot2`/`Intelligence` while the document asks for charts; any legacy `Dashboard` view is itself a finding),
    pages per role, active automations, constraints per table, forms per actor.
 3. **Design vs base diff.** List every object the design package promised (pages, blocks such as PROGRESS, constraints,
    views, menu filters, automations) and check each exists. Objects promised but not built were the largest group of

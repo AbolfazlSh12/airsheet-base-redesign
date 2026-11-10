@@ -69,9 +69,10 @@ const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp
   const formOut = (layout) => { const L = parse(layout, []); if (!Array.isArray(L)) return undefined;
     return L.map((pg) => ({ button: pg.button?.text, inputs: (pg.inputs || []).map((i) => [nm(i.id) || i.name, i.required ? 'REQ' : '', i.invisible ? 'HIDDEN' : '', (i.conditions || []).length ? 'COND' : ''].filter(Boolean).join(' ')),
       defaults: Object.keys(pg.defaultValues || {}).map(nm) })); };
-  // report views: what they group and measure (Pivot2 / Pivot / Dashboard / Calendar / Gantt / Kanban)
+  // report views: what they group and measure (Pivot2 / Pivot / Intelligence / legacy Dashboard / Calendar / Gantt / Kanban)
   const reportOut = (v) => { const L = parse(v.layout, []); if (!Array.isArray(L) || !L.length) return undefined;
     if (v.type === 'Pivot2') return L.map((x) => ({ title: x.reportTitle, rows: (x.rowFields || []).map((r) => nm(r.field)), cols: (x.colFields || []).map((r) => nm(r.field)), measures: (x.measures || []).map((m) => `${m.function}(${nm(m.field)})`) }));
+    if (v.type === 'Intelligence') return L.map((x) => `${x.type} x=${nm(x.xAxis)}${x.zAxis ? ` z=${nm(x.zAxis)}` : ''} ${x.yAxisFunction === 'count' ? 'count' : `${x.yAxisFunction}(${(x.ySeries?.length > 1 ? x.ySeries : [x.yAxisField]).map(nm).join(',')})`} «${x.title || ''}»`);
     if (v.type === 'Dashboard') return L.map((x) => `${x.type} by ${nm(x.by)} ${x.stats === 'count' ? 'count' : `${x.aggregate}(${nm(x.field)})`} «${x.title || ''}»`);
     if (v.type === 'Pivot') return L.map((x) => ({ groups: (x.groups || []).map(nm), bys: (x.bys || []).map(nm), measure: x.field ? `${x.aggregate}(${nm(x.field)})` : undefined }));
     if (v.type === 'Calendar' || v.type === 'Gantt') return L.map((x) => ({ start: nm(x.startTimeField || x.timeField), end: nm(x.endTimeField), title: nm(x.titleField) }));

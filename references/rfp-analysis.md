@@ -102,7 +102,7 @@ shapes on the server, read-only, before scripting them.
 
 | Need | Configuration that meets it |
 |---|---|
-| Tables, charts and dashboards | `Pivot2` views (rows, columns, measures `sum/count/avg/min/max/median`), `Dashboard` views (bar, donut, pie, gauge, funnel, radar…), `STATS` blocks. Group by **text** fields only, see `platform-lessons.md` |
+| Tables, charts and dashboards | `Pivot2` views (rows, columns, measures `sum/count/avg/min/max/median`), `Intelligence` views (column, bar, line, area, pie, gauge, heatmap, spider, bubble, funnel, treemap, waterfall, sankey, number; never the legacy `Dashboard` type, see `platform-lessons.md`), `STATS` blocks. Group by **text** fields only, see `platform-lessons.md` |
 | Timeline or occupancy | `Calendar` and `Gantt` views |
 | Status progress | `PROGRESS` block over a single-select |
 | Who and when approved | `signature` field + button action `signs` (stamps user and time) |
