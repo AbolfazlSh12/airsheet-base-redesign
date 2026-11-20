@@ -147,6 +147,10 @@ export const tabs = (k: string, list: { label: string; blocks: any[] }[]) => ({ 
     content: { name: x.label, blocks: x.blocks } })) });
 
 /** VIEW block with every display key the checklist wants. */
+/** A record's photos, logo or album in a record template / profile page: the editor's «گالری تصاویر» block (ImageGallery),
+ *  with the defaults ImageGalleryBlock.vue writes on mount (border false, borderColor = settings.colors[0], borderRadius 12).
+ *  Never a read-only RECORD block for an image field: it shows the file name next to a small thumbnail (page-lint photoAsFile). */
+export const gallery = (k: string, fieldId: string) => ({ id: uid(k), type: "ImageGallery", details: { field: fieldId, border: false, borderColor: "blue", borderRadius: 12 } });
 export const view = (k: string, viewId: string, o: { toolbar?: boolean; newable?: string; template?: string } = {}) => ({
   id: uid(k), type: "VIEW", details: { value: { value: viewId, expandTemplate: o.template ?? "default", displayListName: false,
     viewToolbar: o.toolbar ? "visible" : "invisible",

@@ -82,6 +82,13 @@ Where the code and the data disagree, the code wins. Every "known bug" below poi
 28. **Use images where they carry meaning, not as decoration.** A hero illustration, covers on catalogue-like galleries, a
     photo in a record header, an illustration in an empty state. Inline SVG in TEXT works on every server and in dark mode;
     uploaded images need keys (rule 13). One image per section at most.
+    **A record's own photo, logo or album is shown with the «گالری تصاویر» block (ImageGallery, `visual-kit.gallery`),
+    never with a read-only RECORD block**: RECORD draws the file name next to a small thumbnail (2026-11-20, Hayat: a
+    profile showed «93d…jpg» beside the photo, a service page its logo as «ill-flowers.png»). It is offered only inside a
+    record template (or an ExpandRecord page); write the mount defaults `{field, border:false, borderColor:"blue",
+    borderRadius:12}`. It is a 320 px slider filling its column: put a single photo in a narrow column of a COLUMNS2, an
+    album full width. It draws nothing when the field is empty. Editing the file stays in an editable RECORD (`immutable`
+    without the field). `page-lint.ts` reports every read-only RECORD whose field holds images (photoAsFile).
 29. **Choose every view type, gallery type and block by its use case, never by habit or default.** Decide what the user
     does with the list, then pick:
 
@@ -644,7 +651,7 @@ View-level display settings are covered in §6.
 | LINK | Opens `/app/<view>`, collaborators only | **Don't use** |
 | GenerateText | AI | |
 | TASKMANAGER | | |
-| ImageGallery | Record attachments field: `field`, `overlayField`, `border*` | |
+| ImageGallery | Record attachments field: `field`, `overlayField`, `border` (false), `borderColor` ("blue" = settings.colors[0]), `borderRadius` (12); the three defaults are written on mount | How a record's photo is shown (rule 28); 320 px high slider; record context only |
 | ControlledEdit | | |
 | GROUPSECTION | Record context; a per-option section of a singleSelect | |
 | IranMap | | |

@@ -8,6 +8,8 @@
 //   gridInColumn  a Grid / Kanban / Calendar inside COLUMNS2-4: half width gives a horizontal scrollbar and uneven
 //               heights (design-guide 4.7; Eqlim home, 2026-11-10) → full-width card, or one card with TABS
 //   bareList    a list VIEW outside any SECTION card, straight on the page pattern (design-guide rule «white cards»)
+//   photoAsFile a record's photo, logo or album shown by a read-only RECORD block (file name + small thumbnail), on a page or a
+//               record template → the «گالری تصاویر» block (ImageGallery, design-guide rule 28) — 2026-11-20, Hayat profile
 // Also prints every table's Form views (input for new-forms.ts FORMS).
 import * as L from "./lib";
 
@@ -69,6 +71,24 @@ L.run(async () => {
       walk(p.content?.blocks, where);
     }
   }
+  // photoAsFile: attachments fields whose stored files are images, then every RECORD block that shows one read-only
+  const IMG = new Set<string>(), NAME: Record<string, string> = {};
+  for (const t of await L.listTables()) {
+    const att = (await L.listFields(String(t._id))).filter((f: any) => f.type === "attachments" || f.lookupType === "attachments");
+    if (!att.length) continue;
+    const rows = await L.listRecords(String(t._id));
+    for (const f of att) { NAME[String(f._id)] = f.name; if (rows.some((r: any) => JSON.stringify(r[String(f._id)] ?? "").includes('"mimetype":"image/'))) IMG.add(String(f._id)); }
+  }
+  const photo: string[] = [];
+  const seek = (x: any, where: string) => {
+    if (!x || typeof x !== "object") return;
+    if (x.type === "RECORD" && Array.isArray(x.details?.value)) for (const f of x.details.value)
+      if (IMG.has(String(f)) && x.details.immutable?.[f] !== undefined) photo.push(`${where} RECORD «${NAME[f]}» → ImageGallery`);
+    for (const v of Object.values(x)) seek(v, where);
+  };
+  for (const s of sides) for (const p of pages[String(s._id)]) seek(p.content, `${s.name}|${p.name || p._id}`);
+  for (const t of await L.listTables()) for (const e of await L.listExpands(String(t._id))) seek(e.layout, `${t.name}|template «${e.name}»`);
+  F.photoAsFile = photo;
   console.log(JSON.stringify({ forms }, null, 1));
   let n = 0;
   for (const [k, v] of Object.entries(F)) { console.log(`${k}: ${v.length}`); v.slice(0, 40).forEach((x) => console.log("  " + x)); n += v.length; }
